@@ -11,8 +11,8 @@ let defaults = {
     // setting the event listeners. is expected to be a simple DOM node
     container: null,
 
-    // the moveable DOM node with the actual scrollable content
-    moveable: null,
+    // array containing the moveable DOM nodes representing each page/card
+    moveables: [],
 
     // decide what axis to allow scrolling on, gets translated into an array by
     // the class constructor
@@ -39,6 +39,7 @@ let defaults = {
       height: 0,
       width: 0
     },
+    // a single abstract moveable is used to represent the current page
     moveable: {
       height: 0,
       width: 0,
@@ -75,8 +76,9 @@ let defaults = {
         bounceStartPosition: 0
       }
     },
-    axis: ['x', 'y'],
-    axisStartEnd: ['axisStart', 'axisEnd']
+    axis: ['x'],
+    axisStartEnd: ['axisStart', 'axisEnd'],
+    currentMoveableIndex: 0
   },
 
   state: {
@@ -102,20 +104,26 @@ let events = {
 
 export default class Spaeti {
   constructor(config) {
-    this.sharedScope = new SharedScope();
-    this.touchToPush = new TouchToPush(config, this.sharedScope);
-    this.momentum = new Momentum(config, this.sharedScope);
-
     this._config = fUtils.cloneDeep(defaults.config);
     this._private = fUtils.cloneDeep(defaults.private);
     this._state = fUtils.cloneDeep(defaults.state);
 
     if (config) fUtils.mergeDeep(this._config, config);
-    this._private.axis = this._config.axis.split('');
+
+    this.sharedScope = new SharedScope();
+    this.touchToPush = new TouchToPush(config, this.sharedScope);
+    this.momentum = new Momentum(config, this.sharedScope);
 
     this._subscribePubsubs();
     this._calculateParams();
     this._bindBounce();
+
+    this._config.moveables.forEach((moveable) => {
+      console.debug(moveable);
+    });
+
+    this._resetDOMNodePositions();
+    this._updateDOMNodePositions();
   }
 
 
@@ -224,6 +232,13 @@ export default class Spaeti {
   }
 
 
+  _resetDOMNodePositions() {
+    this._config.moveables.forEach((moveable) => {
+      moveable.style.webkitTransform = 'translate3d(' + this._private.moveable.width + 'px, ' + 0 + 'px, 0px)';
+    });
+  }
+
+
   _onRefresh(config) {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
@@ -246,8 +261,12 @@ export default class Spaeti {
   _calculateParams() {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
-    this._private.moveable.width = this._config.moveable.clientWidth;
-    this._private.container.height = this._config.moveable.clientHeight;
+
+    // TODO remove
+    // this._private.moveable.width = this._config.moveable.clientWidth;
+    // this._private.moveable.height = this._config.moveable.clientHeight;
+    this._private.moveable.width = this._config.moveables[0].clientWidth;
+    this._private.moveable.height = this._config.moveables[0].clientHeight;
 
     // calculate the maximum and minimum coordinates for scrolling. these are
     // used as boundaries for determining overscroll status, initiating bounce
@@ -367,8 +386,25 @@ export default class Spaeti {
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
 
-      // set the position of the actual dom node
-      this._config.moveable.style.webkitTransform = 'translate3d(' + this._private.moveable.x + 'px, ' + this._private.moveable.y + 'px, 0px)';
+      this._updateDOMNodePositions();
+    }
+  }
+
+
+  _updateDOMNodePositions() {
+    this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(' + this._private.moveable.x + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    //this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(50px, ' + this._private.moveable.y + 'px, 0px)';
+
+
+    if (this._private.currentMoveableIndex > 0) {
+      this._config.moveables[this._private.currentMoveableIndex -1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x - this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    }
+
+    if (this._private.currentMoveableIndex < this._config.moveables.length -1) {
+      console.log("zamn " + (this._private.moveable.x + this._private.moveable.width));
+      this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x + this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
+      //this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(30px, ' + this._private.moveable.y + 'px, 0px)';
+      console.debug(this._config.moveables[this._private.currentMoveableIndex +1]);
     }
   }
 
