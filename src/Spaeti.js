@@ -25,7 +25,7 @@ let defaults = {
     maxTouchOverscroll: 300,
 
     // maximum amount of pixels for momentum-led overscrolling
-    maxMomentumOverscroll: 100,
+    maxMomentumOverscroll: 300,
 
     // how much time (in msec) it takes to bounce back
     bounceTime: 500,
@@ -117,10 +117,6 @@ export default class Spaeti {
     this._subscribePubsubs();
     this._calculateParams();
     this._bindBounce();
-
-    this._config.moveables.forEach((moveable) => {
-      console.debug(moveable);
-    });
 
     this._resetDOMNodePositions();
     this._updateDOMNodePositions();
@@ -393,18 +389,13 @@ export default class Spaeti {
 
   _updateDOMNodePositions() {
     this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(' + this._private.moveable.x + 'px, ' + this._private.moveable.y + 'px, 0px)';
-    //this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(50px, ' + this._private.moveable.y + 'px, 0px)';
-
-
+    
     if (this._private.currentMoveableIndex > 0) {
       this._config.moveables[this._private.currentMoveableIndex -1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x - this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
     }
 
     if (this._private.currentMoveableIndex < this._config.moveables.length -1) {
-      console.log("zamn " + (this._private.moveable.x + this._private.moveable.width));
       this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x + this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
-      //this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(30px, ' + this._private.moveable.y + 'px, 0px)';
-      console.debug(this._config.moveables[this._private.currentMoveableIndex +1]);
     }
   }
 
