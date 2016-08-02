@@ -11,14 +11,8 @@ let defaults = {
     // setting the event listeners. is expected to be a simple DOM node
     container: null,
 
-    // abstract version of DOM node to be moved. abstract because wegbier
-    // supports not only physical but also virtual scrolling
-    moveable: {
-      height: 0,
-      width: 0,
-      x: 0,
-      y: 0
-    },
+    // the moveable DOM node with the actual scrollable content
+    moveable: null,
 
     // decide what axis to allow scrolling on, gets translated into an array by
     // the class constructor
@@ -110,7 +104,6 @@ export default class Spaeti {
   constructor(config) {
     this.sharedScope = new SharedScope();
     this.touchToPush = new TouchToPush(config, this.sharedScope);
-    this.spaeti = new Spaeti(config, this.sharedScope);
     this.momentum = new Momentum(config, this.sharedScope);
 
     this._config = fUtils.cloneDeep(defaults.config);
@@ -253,8 +246,8 @@ export default class Spaeti {
   _calculateParams() {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
-
-    fUtils.mergeDeep(this._private.moveable, this._config.moveable);
+    this._private.moveable.width = this._config.moveable.clientWidth;
+    this._private.container.height = this._config.moveable.clientHeight;
 
     // calculate the maximum and minimum coordinates for scrolling. these are
     // used as boundaries for determining overscroll status, initiating bounce
@@ -374,9 +367,8 @@ export default class Spaeti {
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
 
-      // dispatch the position change as an event which will be made available
-      // to event listeners via the wegbier object.
-      this.sharedScope.dispatchEvent(events.positionChanged, newCoordinates);
+      // set the position of the actual dom node
+      this._config.moveable.style.webkitTransform = 'translate3d(' + this._private.moveable.x + 'px, ' + this._private.moveable.y + 'px, 0px)';
     }
   }
 
