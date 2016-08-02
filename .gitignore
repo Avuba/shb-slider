@@ -5,3 +5,4 @@ node_modules
 # edge cases
 dev/*
 !dev/index.html
+!dev/pattern.jpg

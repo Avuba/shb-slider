@@ -1,5 +1,8 @@
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
+import { default as SharedScope } from './SharedScope.js';
+import { default as TouchToPush } from './TouchToPush.js';
+import { default as Momentum } from './Momentum.js';
 
 
 let defaults = {
@@ -19,7 +22,7 @@ let defaults = {
 
     // decide what axis to allow scrolling on, gets translated into an array by
     // the class constructor
-    axis: 'xy',
+    axis: 'x',
 
     // allow scrolling beyond the edge of moveable
     overscroll: true,
@@ -90,8 +93,11 @@ let defaults = {
 
 
 let topics = {
-  positionManuallySet: 'pushToCoords:positionManuallySet',
-  positionStableOnAxis: 'pushToCoords:positionStableOnAxis'
+  refresh: 'main:refresh',
+  destroy: 'main:destroy',
+  positionManuallySet: 'spaeti:positionManuallySet',
+  positionStableOnAxis: 'spaeti:positionStableOnAxis',
+  freezeScroll: 'spaeti:freezeScroll'
 };
 
 
@@ -100,9 +106,12 @@ let events = {
 };
 
 
-export default class PushToCoords {
-  constructor(config, sharedScope) {
-    this.sharedScope = sharedScope;
+export default class Spaeti {
+  constructor(config) {
+    this.sharedScope = new SharedScope();
+    this.touchToPush = new TouchToPush(config, this.sharedScope);
+    this.spaeti = new Spaeti(config, this.sharedScope);
+    this.momentum = new Momentum(config, this.sharedScope);
 
     this._config = fUtils.cloneDeep(defaults.config);
     this._private = fUtils.cloneDeep(defaults.private);
@@ -118,6 +127,32 @@ export default class PushToCoords {
 
 
   // PUBLIC
+
+
+  refresh(config) {
+    this.sharedScope.publish(topics.refresh, config);
+  }
+
+
+  destroy() {
+    this.sharedScope.publish(topics.destroy);
+  }
+
+
+  // instantly scrolls to a given pos = {x, y} (or nearest possible).
+  scrollTo(position) {
+    this.spaeti.setMoveablePosition(position);
+  }
+
+
+  freezeScroll(shouldFreeze) {
+    this.sharedScope.publish(topics.freezeScroll, shouldFreeze);
+  }
+
+
+  getBoundaries() {
+    return fUtils.cloneDeep(this._private.boundaries);
+  }
 
 
   setMoveablePosition(position) {
@@ -141,11 +176,6 @@ export default class PushToCoords {
 
     // apply changes
     this._updateCoords(validPosition);
-  }
-
-
-  getBoundaries() {
-    return fUtils.cloneDeep(this._private.boundaries);
   }
 
 

@@ -62,9 +62,9 @@ export default class Momentum {
   _subscribePubsubs() {
     this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
 
-    this.sharedScope.subscribe('pushToCoords:positionManuallySet', this._stopMomentum.bind(this));
+    this.sharedScope.subscribe('spaeti:positionManuallySet', this._stopMomentum.bind(this));
     this.sharedScope.subscribe('touchToPush:finishTouchWithMomentum', this._startMomentum.bind(this));
-    this.sharedScope.subscribe('pushToCoords:positionStableOnAxis', this._stopMomentumOnAxis.bind(this));
+    this.sharedScope.subscribe('spaeti:positionStableOnAxis', this._stopMomentumOnAxis.bind(this));
 
     this.sharedScope.subscribe('touchToPush:touchstart', (event) => {
       this._private.currentMomentum = null;
@@ -150,7 +150,7 @@ export default class Momentum {
       this._private.currentMomentum[axis].direction = 0;
       this._private.currentMomentum[axis].pxPerFrame = 0;
       this._state.momentum[axis] = false;
-      
+
       this.sharedScope.publish(topics.stoppedOnAxis, axis);
     }
   }
