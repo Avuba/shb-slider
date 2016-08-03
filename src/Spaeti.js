@@ -2,7 +2,6 @@ import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as SharedScope } from './SharedScope.js';
 import { default as TouchToPush } from './TouchToPush.js';
-import { default as Momentum } from './Momentum.js';
 
 
 let defaults = {
@@ -39,7 +38,7 @@ let defaults = {
       height: 0,
       width: 0
     },
-    // a single abstract moveable is used to represent the current page
+    // a single abstract moveable is used to represent the combined collection of pages
     moveable: {
       height: 0,
       width: 0,
@@ -62,27 +61,38 @@ let defaults = {
       x: {
         axisStart: false,
         axisEnd: false,
-        px: 0,
-        isBounceActive: false,
-        bounceStartTime: 0,
-        bounceStartPosition: 0
+        px: 0
       },
       y: {
         axisStart: false,
         axisEnd: false,
-        px: 0,
-        isBounceActive: false,
+        px: 0
+      }
+    },
+    bounce: {
+      x: {
+        isActive: false,
         bounceStartTime: 0,
-        bounceStartPosition: 0
+        bounceStartPosition: 0,
+        bounceTargetPosition: 0
+      },
+      y: {
+        isActive: false,
+        bounceStartTime: 0,
+        bounceStartPosition: 0,
+        bounceTargetPosition: 0
       }
     },
     axis: ['x'],
     axisStartEnd: ['axisStart', 'axisEnd'],
-    currentMoveableIndex: 0
+    currentMoveableIndex: 0,
+    currentMoveablePositionX: 0
   },
 
   state: {
     isTouchActive: false,
+    isPusherActive: { x: false, y: false },
+    // TODO remove
     momentum: { x: false, y: false }
   }
 }
@@ -112,7 +122,7 @@ export default class Spaeti {
 
     this.sharedScope = new SharedScope();
     this.touchToPush = new TouchToPush(config, this.sharedScope);
-    this.momentum = new Momentum(config, this.sharedScope);
+    // TODO delete this.momentum = new Momentum(config, this.sharedScope);
 
     this._subscribePubsubs();
     this._calculateParams();
@@ -183,7 +193,8 @@ export default class Spaeti {
     this.sharedScope.subscribe('main:refresh', this._onRefresh.bind(this));
     this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
 
-    this.sharedScope.subscribe('momentum:pushBy', this._onPushBy.bind(this));
+    //this.sharedScope.subscribe('momentum:pushBy', this._onPushBy.bind(this));
+    this.sharedScope.subscribe('touchToPush:finishTouchWithMomentum', this._onMomentum.bind(this));
     this.sharedScope.subscribe('touchToPush:pushBy', this._onPushBy.bind(this));
 
     this.sharedScope.subscribe('touchToPush:touchstart', (event) => {
@@ -191,7 +202,7 @@ export default class Spaeti {
 
       // kill event to avoid unwanted touch interactions with potential elements
       // inside of moveable
-      if (this._private.overscroll.x.isBounceActive || this._private.overscroll.y.isBounceActive) {
+      if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
         utils.stopEvent(event);
         this._stopBounce();
       }
@@ -199,8 +210,7 @@ export default class Spaeti {
 
     this.sharedScope.subscribe('touchToPush:touchend', (event) => {
       this._state.isTouchActive = false;
-      // wait for a potential momentum push to kick in
-      setTimeout(this._checkForBounceStart.bind(this), 10);
+      this._checkForBounceStart();
     });
 
     this.sharedScope.subscribe('momentum:stop', (event) => {
@@ -230,7 +240,7 @@ export default class Spaeti {
 
   _resetDOMNodePositions() {
     this._config.moveables.forEach((moveable) => {
-      moveable.style.webkitTransform = 'translate3d(' + this._private.moveable.width + 'px, ' + 0 + 'px, 0px)';
+      moveable.style.webkitTransform = 'translate3d(' + this._private.container.width + 'px, ' + 0 + 'px, 0px)';
     });
   }
 
@@ -258,11 +268,10 @@ export default class Spaeti {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
 
-    // TODO remove
-    // this._private.moveable.width = this._config.moveable.clientWidth;
-    // this._private.moveable.height = this._config.moveable.clientHeight;
-    this._private.moveable.width = this._config.moveables[0].clientWidth;
-    this._private.moveable.height = this._config.moveables[0].clientHeight;
+    // the abstract moveable is the width of the combined moveables.
+    // we assume that each meoveable has the same width and height as the container
+    this._private.moveable.width = this._private.container.width * this._config.moveables.length;
+    this._private.moveable.height = this._private.container.height;
 
     // calculate the maximum and minimum coordinates for scrolling. these are
     // used as boundaries for determining overscroll status, initiating bounce
@@ -284,6 +293,38 @@ export default class Spaeti {
         this._private.boundaries[xy].axisEnd   = this._private.container[dimension] - this._private.moveable[dimension];
       }
     });
+  }
+
+
+  _onMomentum(momentum) {
+    // console.debug(momentum);
+    console.log("mom " + momentum.x.pxPerFrame + "  dir " + momentum.x.direction);
+    // TODO this should be a config value
+    if (momentum.x.pxPerFrame < 25) return;
+
+    console.log("on with it, dir/index " + momentum.x.direction + " " + this._private.currentMoveableIndex);
+
+    let targetPositionPx;
+
+    // we need to check the position of the current page also, if its already at a transition point
+    if (momentum.x.direction > 0
+        && this._private.currentMoveableIndex > 0
+        && this._private.currentMoveablePositionX > 0) {
+      targetPositionPx = (this._private.currentMoveableIndex -1) * -this._private.container.width;
+    }
+    else if (momentum.x.direction < 0
+        && this._private.currentMoveableIndex < this._config.moveables.length -1
+        && this._private.currentMoveablePositionX < 0) {
+      targetPositionPx = (this._private.currentMoveableIndex +1) * -this._private.container.width;
+    }
+
+    if (fUtils.is(targetPositionPx)) {
+      console.log("YEP target " + targetPositionPx);
+      this._startBounceOnAxis('x', targetPositionPx);
+    }
+    else {
+      console.log("NOPE");
+    }
   }
 
 
@@ -388,14 +429,40 @@ export default class Spaeti {
 
 
   _updateDOMNodePositions() {
-    this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(' + this._private.moveable.x + 'px, ' + this._private.moveable.y + 'px, 0px)';
-    
-    if (this._private.currentMoveableIndex > 0) {
-      this._config.moveables[this._private.currentMoveableIndex -1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x - this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    let updatedMoveableIndex = Math.round(-this._private.moveable.x / this._private.container.width);
+
+    // constrain the calculated index when overscrolling
+    if (updatedMoveableIndex < 0) {
+      updatedMoveableIndex = 0;
+    }
+    else if (updatedMoveableIndex >= this._config.moveables.length) {
+      updatedMoveableIndex = this._config.moveables.length -1;
     }
 
+    // TODO
+    // this is necessary because pages can still be left with a bit hanging outside
+    // (if the animation is fast); so we detect page transitions and make sure "old" pages are
+    // pushed off limits and nothing is left hanging out.
+    // but once bounce is in, we might not need this at all
+    if ((updatedMoveableIndex < this._private.currentMoveableIndex && this._private.currentMoveableIndex +1 < this._config.moveables.length)
+        || (updatedMoveableIndex > this._private.currentMoveableIndex && this._private.currentMoveableIndex -1 >= 0)) {
+      this._config.moveables[this._private.currentMoveableIndex+1].style.webkitTransform = 'translate3d(' + this._private.container.width + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    }
+
+    this._private.currentMoveableIndex = updatedMoveableIndex;
+    this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentMoveableIndex * this._private.container.width);
+
+    // apply the transform to the current page/moveable
+    this._config.moveables[this._private.currentMoveableIndex].style.webkitTransform = 'translate3d(' + this._private.currentMoveablePositionX + 'px, ' + this._private.moveable.y + 'px, 0px)';
+
+    // apply the transform to the previous moveable (to the left)
+    if (this._private.currentMoveableIndex > 0) {
+      this._config.moveables[this._private.currentMoveableIndex -1].style.webkitTransform = 'translate3d(' + (this._private.currentMoveablePositionX - this._private.container.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    }
+
+    // apply the transform to the next moveable (to the right)
     if (this._private.currentMoveableIndex < this._config.moveables.length -1) {
-      this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(' + (this._private.moveable.x + this._private.moveable.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
+      this._config.moveables[this._private.currentMoveableIndex +1].style.webkitTransform = 'translate3d(' + (this._private.currentMoveablePositionX + this._private.container.width) + 'px, ' + this._private.moveable.y + 'px, 0px)';
     }
   }
 
@@ -416,27 +483,39 @@ export default class Spaeti {
 
 
   _checkForBounceStartOnAxis(axis) {
+    console.log("check for bounce on " + axis);
     let overscroll = this._private.overscroll;
 
+    // TODO remove
+    /*
     if (!this._state.isTouchActive
       && !this._state.momentum[axis]
       && (overscroll[axis].axisStart || overscroll[axis].axisEnd)) {
       this._startBounceOnAxis(axis);
     }
+    */
+
+    if (!this._state.isTouchActive
+        && !this._private.bounce[axis].isActive
+        && !this._state.isPusherActive[axis]) {
+      let targetPosition = this._getClosestBounceTargetOnAxis(axis);
+      console.log("Target on " + axis + " " + targetPosition);
+      if (targetPosition != this._private.moveable[axis]) {
+        this._startBounceOnAxis(axis, targetPosition);
+      }
+    }
   }
 
 
-  _startBounceOnAxis(axis) {
+  _startBounceOnAxis(axis, targetPositionPx) {
     cancelAnimationFrame(this._private.currentFrame);
 
-    let overscroll = this._private.overscroll;
+    let bounce = this._private.bounce;
 
-    if (!this._private.overscroll[axis].isBounceActive) {
-      this._private.overscroll[axis].isBounceActive = true;
-
-      overscroll[axis].bounceStartTime = Date.now();
-      overscroll[axis].bounceStartPosition = overscroll[axis].px;
-    }
+    bounce[axis].isActive = true;
+    bounce[axis].bounceStartTime = Date.now();
+    bounce[axis].bounceStartPosition = this._private.moveable[axis];
+    bounce[axis].bounceTargetPosition = targetPositionPx;
 
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
   }
@@ -449,19 +528,20 @@ export default class Spaeti {
     };
 
     this._forXY((xy) => {
-      if (this._private.overscroll[xy].isBounceActive) {
-        let overscroll = this._private.overscroll,
-          timePassed = Date.now() - overscroll[xy].bounceStartTime;
+      if (this._private.bounce[xy].isActive) {
+        let bounce = this._private.bounce,
+          overscroll = this._private.overscroll,
+          timePassed = Date.now() - bounce[xy].bounceStartTime;
 
-        // CALCULATE NEW OVERSCROLL POSITION
+        // CALCULATE NEW POSITION
 
-        let overscrollAmount = utils.easeOutCubic(
+        let newPositionOnAxis = utils.easeOutCubic(
           timePassed,
-          overscroll[xy].bounceStartPosition,
-          -overscroll[xy].bounceStartPosition,
+          bounce[xy].bounceStartPosition,
+          bounce[xy].bounceTargetPosition - bounce[xy].bounceStartPosition,
           this._config.bounceTime);
 
-        // APPLY NEW OVERSCROLL POSITION
+        // APPLY NEW POSITION
 
         // we test how much time has passed and not the overscroll value.
         // testing the overscroll value (for zero or negative values)
@@ -469,11 +549,15 @@ export default class Spaeti {
         // a) exponential functions never really cross the axis;
         // b) some ease functions will cross the axes (spring-like effect).
         if (timePassed < this._config.bounceTime) {
+          // TODO remove
+          /*
           if (overscroll[xy].axisStart) {
             newCoordinates[xy] = this._private.boundaries[xy].axisStart + overscrollAmount;
           } else if (overscroll[xy].axisEnd) {
             newCoordinates[xy] = this._private.boundaries[xy].axisEnd - overscrollAmount;
           }
+          */
+          newCoordinates[xy] = newPositionOnAxis;
         } else {
           // stop bounce and snap the moveable to it's boundaries
           if (overscroll[xy].axisStart) {
@@ -483,14 +567,14 @@ export default class Spaeti {
             overscroll[xy].axisEnd = false;
             newCoordinates[xy] = this._private.boundaries[xy].axisEnd;
           }
-          this._private.overscroll[xy].isBounceActive = false;
+          bounce[xy].isActive = false;
         }
       }
     });
 
     this._updateCoords(newCoordinates);
 
-    if (this._private.overscroll.x.isBounceActive || this._private.overscroll.y.isBounceActive) {
+    if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
       this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
     } else {
       this._stopBounce();
@@ -499,12 +583,65 @@ export default class Spaeti {
 
 
   _stopBounce() {
-    this._private.overscroll.x.isBounceActive = this._private.overscroll.y.isBounceActive = false;
+    this._private.bounce.x.isActive = this._private.bounce.y.isActive = false;
     cancelAnimationFrame(this._private.currentFrame);
   }
 
 
   // HELPERS
+
+
+  // TODO remove
+  /*
+  _getCurrentMoveablePositionX() {
+    return this._private.moveable.x + (this._private.currentMoveableIndex * this._private.container.width);
+  }
+  */
+
+  // TODO remove
+  /*
+  _getUpdatedMoveableIndex() {
+    let updatedMoveableIndex = Math.round(-this._private.moveable.x / this._private.container.width);
+
+    // constrain the calculated index when overscrolling
+    if (updatedMoveableIndex < 0) {
+      updatedMoveableIndex = 0;
+    }
+    else if (updatedMoveableIndex >= this._config.moveables.length) {
+      updatedMoveableIndex = this._config.moveables.length -1;
+    }
+
+    return updatedMoveableIndex;
+  }
+  */
+
+  _getClosestBounceTargetOnAxis(axis) {
+    let bounceTarget = this._private.moveable[axis];
+
+    if (this._private.moveable[axis] > this._private.boundaries[axis].axisStart) {
+      bounceTarget = this._private.boundaries[axis].axisStart;
+    }
+    else if (this._private.moveable[axis] < this._private.boundaries[axis].axisEnd) {
+      bounceTarget = this._private.boundaries[axis].axisEnd;
+    }
+    // attractor behavior only applies to x-axis
+    else if (axis == 'x') {
+      // use the current moveable index to determine the closest attractors
+      let targetLeft = this._private.currentMoveableIndex * -this._private.container.width,
+        targetRight = targetLeft - this._private.container.width;
+
+      //console.log("distances (L/R) " + (this._private.moveable[axis] - targetLeft) + " " + (targetRight - this._private.moveable[axis]));
+
+      if (Math.abs(this._private.moveable[axis] - targetLeft) < this._private.container.width/2) {
+        bounceTarget = targetLeft;
+      }
+      else if (Math.abs(targetRight - this._private.moveable[axis]) < this._private.container.width/2) {
+        bounceTarget = targetRight;
+      }
+    }
+
+    return bounceTarget;
+  }
 
 
   _forXY(toExecute) {
