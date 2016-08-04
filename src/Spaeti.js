@@ -100,11 +100,6 @@ let topics = {
   freezeScroll: 'spaeti:freezeScroll'
 };
 
-// TODO add event "interface"
-let events = {
-  positionChanged: 'wegbier:positionChanged'
-};
-
 
 export default class Spaeti {
   constructor(config) {
@@ -139,12 +134,35 @@ export default class Spaeti {
   }
 
 
-  // instantly scrolls to a given pos = {x, y} (or nearest possible).
-  scrollTo(position) {
-    this.spaeti.setMoveablePosition(position);
+  scrollToPage(pageIndex) {
+    this.scrollToPosition(pageIndex * -this._private.container.width, this._private.moveable.y);
   }
 
-  // TODO (?)
+
+  // instantly scrolls to a given position or nearest possible.
+  scrollToPosition(x, y) {
+    let position = { x: x, y: y },
+      validPosition = { x: 0, y: 0 };
+
+    this.sharedScope.publish(topics.positionManuallySet);
+
+    this._forXY((xy) => {
+      validPosition[xy] = position[xy];
+
+      // check if coordinates are within bounds, constrain them otherwise
+      if (validPosition[xy] > this._private.boundaries[xy].axisStart) {
+        validPosition[xy] = this._private.boundaries[xy].axisStart;
+      }
+      else if (validPosition[xy] < this._private.boundaries[xy].axisEnd) {
+        validPosition[xy] = this._private.boundaries[xy].axisEnd;
+      }
+    });
+
+    // apply changes
+    this._updateCoords(validPosition);
+  }
+
+
   freezeScroll(shouldFreeze) {
     this.sharedScope.publish(topics.freezeScroll, shouldFreeze);
   }
@@ -152,35 +170,6 @@ export default class Spaeti {
 
   getBoundaries() {
     return fUtils.cloneDeep(this._private.boundaries);
-  }
-
-
-  setMoveablePage(pageIndex) {
-    this.setMoveablePosition(pageIndex * this._private.container.whidth);
-  }
-
-
-  setMoveablePosition(position) {
-    let validPosition = {
-      x: 0,
-      y: 0
-    };
-
-    this.sharedScope.publish(topics.positionManuallySet);
-
-    this._forXY((xy) => {
-      // check if coordinates are within bounds, constrain them otherwise
-      if (position[xy] > this._private.boundaries[xy].axisStart) {
-        validPosition[xy] = this._private.boundaries[xy].axisStart;
-      } else if (position[xy] < this._private.boundaries[xy].axisEnd) {
-        validPosition[xy] = this._private.boundaries[xy].axisEnd;
-      } else {
-        validPosition[xy] = position[xy];
-      }
-    });
-
-    // apply changes
-    this._updateCoords(validPosition);
   }
 
 
