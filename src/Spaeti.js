@@ -237,6 +237,14 @@ export default class Spaeti {
       updatedMoveableIndex = this._config.moveables.length -1;
     }
 
+    // the following is necessary because scrolled-out pages can still be left with a bit visible
+    // inside the container area (if the animation is fast); so we detect page transitions and make
+    // sure the "old" (scrolled-out) page is pushed off limits and nothing is left hanging out.
+    if ((updatedMoveableIndex < this._private.currentMoveableIndex && this._private.currentMoveableIndex +1 < this._config.moveables.length)
+        || (updatedMoveableIndex > this._private.currentMoveableIndex && this._private.currentMoveableIndex -1 >= 0)) {
+      this._config.moveables[this._private.currentMoveableIndex+1].style.webkitTransform = 'translate3d(' + this._private.container.width + 'px, ' + this._private.moveable.y + 'px, 0px)';
+    }
+
     this._private.currentMoveableIndex = updatedMoveableIndex;
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentMoveableIndex * this._private.container.width);
 
