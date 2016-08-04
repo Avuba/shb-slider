@@ -1,559 +1,79 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
 
-  <title>Wegbier Kitchensink</title>
+  <title>Spaeti Kitchensink</title>
 
   <style>
-    .container-title {
-      position: absolute;
-      font-family: sans-serif;
-      font-size: small;
-    }
-
     .container {
       position: absolute;
-      width: 250px;
-      height: 250px;
+      left: 0px;
+      top: 0px;
+      width: 300px;
+      height: 450px;
       background: #eee;
       overflow: hidden;
     }
 
     .moveable {
       position: absolute;
-      width: 250px;
-      height: 250px;
-      background: url('pattern.jpg');
+      width: 300px;
+      height: 450px;
+      background: url('unicorn.jpg');
       transform: translate3d(0px, 0px, 0px);
       will-change: transform;
     }
-  </style>
-</head>
-<body>
-  <script src="Wegbier.js" charset="utf-8"></script>
-
-  <!-- VERTICAL SCROLL 1 (overscroll) ###################################### -->
-
-  <style>
-    #vertical-scroll-1 {
-      top: 10px;
-    }
 
     #moveable-1 {
-      height: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="vertical-scroll-1">
-    Vertical scroll:
-    <div class="container" id="container-1">
-      <div class="moveable" id="moveable-1"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container1 = document.getElementById('container-1'),
-      moveable1 = document.getElementById('moveable-1');
-
-    var wegbier1 = new Wegbier({
-      container: container1,
-      axis: 'y',
-      moveable: {
-        width: moveable1.clientWidth,
-        height: moveable1.clientHeight
-      }
-    });
-
-    wegbier1.addEventListener("wegbier:positionChanged", function(event) {
-      moveable1.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    });
-  </script>
-
-  <!-- VERTICAL SCROLL 2 (no overscroll) ################################### -->
-
-  <style>
-    #vertical-scroll-2 {
-      top: 290px;
+      background: url('pattern-01.jpg');
     }
 
     #moveable-2 {
-      height: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="vertical-scroll-2">
-    Vertical scroll (no overscroll):
-    <div class="container" id="container-2">
-      <div class="moveable" id="moveable-2"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container2 = document.getElementById('container-2'),
-      moveable2 = document.getElementById('moveable-2');
-
-    var wegbier2 = new Wegbier({
-      container: container2,
-      axis: 'y',
-      overscroll: false,
-      moveable: {
-        width: moveable2.clientWidth,
-        height: moveable2.clientHeight
-      }
-    });
-
-    wegbier2.addEventListener("wegbier:positionChanged", function(event) {
-      moveable2.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- HORIZONTAL SCROLL 1 (overscroll) #################################### -->
-
-  <style>
-    #horizontal-scroll-1 {
-      top: 570px;
+      background: url('pattern-02.jpg');
     }
 
     #moveable-3 {
-      width: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="horizontal-scroll-1">
-    Horizontal scroll:
-    <div class="container" id="container-3">
-      <div class="moveable" id="moveable-3"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container3 = document.getElementById('container-3'),
-      moveable3 = document.getElementById('moveable-3');
-
-    var wegbier3 = new Wegbier({
-      container: container3,
-      axis: 'x',
-      moveable: {
-        width: moveable3.clientWidth,
-        height: moveable3.clientHeight
-      }
-    });
-
-    wegbier3.addEventListener("wegbier:positionChanged", function(event) {
-      moveable3.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- HORIZONTAL SCROLL 2 (no overscroll) ################################# -->
-
-  <style>
-    #horizontal-scroll-2 {
-      top: 850px;
+      background: url('pattern-03.jpg');
     }
 
     #moveable-4 {
-      width: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="horizontal-scroll-2">
-    Horizontal scroll (no overscroll):
-    <div class="container" id="container-4">
-      <div class="moveable" id="moveable-4"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container4 = document.getElementById('container-4'),
-      moveable4 = document.getElementById('moveable-4');
-
-    var wegbier4 = new Wegbier({
-      container: container4,
-      axis: 'x',
-      overscroll: false,
-      moveable: {
-        width: moveable4.clientWidth,
-        height: moveable4.clientHeight
-      }
-    });
-
-    wegbier4.addEventListener("wegbier:positionChanged", function(event) {
-      moveable4.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- TWO-DIMENSIONAL SCROLL 1 (overscroll) ############################### -->
-
-  <style>
-    #two-dimensional-scroll-1 {
-      top: 1130px;
+      background: url('pattern-04.jpg');
     }
 
     #moveable-5 {
-      width: 2000px;
-      height: 2000px;
+      background: url('pattern-05.jpg');
     }
-  </style>
 
-  <div class="container-title" id="two-dimensional-scroll-1">
-    Two-dimensional scroll:
-    <div class="container" id="container-5">
-      <div class="moveable" id="moveable-5"></div>
-    </div>
+  </style>
+</head>
+
+<body>
+  <div class="container" id="container-1">
+    <div class="moveable" id="moveable-1"></div>
+    <div class="moveable" id="moveable-2"></div>
+    <div class="moveable" id="moveable-3"></div>
+    <div class="moveable" id="moveable-4"></div>
+    <div class="moveable" id="moveable-5"></div>
   </div>
 
+  <script src="Spaeti.js" charset="utf-8"></script>
   <script type="text/javascript">
-    var container5 = document.getElementById('container-5'),
-      moveable5 = document.getElementById('moveable-5');
+    // testing
+    var container1 = document.getElementById('container-1');
+    var moveables1 = [];
+    for (var i = 1; i <= 5; i++) {
+      moveables1.push(document.getElementById('moveable-' + i));
+    }
 
-    var wegbier5 = new Wegbier({
-      container: container5,
-      axis: 'xy',
-      moveable: {
-        width: moveable5.clientWidth,
-        height: moveable5.clientHeight
-      }
+    var spaeti1 = new Spaeti({
+      container: container1,
+      moveables: moveables1
     });
 
-    wegbier5.addEventListener("wegbier:positionChanged", function(event) {
-      moveable5.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
   </script>
-
-  <!-- TWO-DIMENSIONAL SCROLL 2 (no overscroll) ############################ -->
-
-  <style>
-    #two-dimensional-scroll-2 {
-      top: 1410px;
-    }
-
-    #moveable-6 {
-      width: 2000px;
-      height: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="two-dimensional-scroll-2">
-    Two-dimensional scroll (no overscroll):
-    <div class="container" id="container-6">
-      <div class="moveable" id="moveable-6"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container6 = document.getElementById('container-6'),
-      moveable6 = document.getElementById('moveable-6');
-
-    var wegbier6 = new Wegbier({
-      container: container6,
-      axis: 'xy',
-      overscroll: false,
-      moveable: {
-        width: moveable6.clientWidth,
-        height: moveable6.clientHeight
-      }
-    });
-
-    wegbier6.addEventListener("wegbier:positionChanged", function(event) {
-      moveable6.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- SMALL MOVEABLE SCROLL 1 (2D, overscroll) ############################# -->
-
-  <style>
-    #small-moveable-scroll-1 {
-      top: 1690px;
-    }
-
-    #moveable-7 {
-      width: 150px;
-      height: 150px;
-    }
-  </style>
-
-  <div class="container-title" id="small-moveable-scroll-1">
-    Small moveable (two-dimensional scroll):
-    <div class="container" id="container-7">
-      <div class="moveable" id="moveable-7"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container7 = document.getElementById('container-7'),
-      moveable7 = document.getElementById('moveable-7');
-
-    var wegbier7 = new Wegbier({
-      container: container7,
-      axis: 'xy',
-      moveable: {
-        width: moveable7.clientWidth,
-        height: moveable7.clientHeight
-      }
-    });
-
-    wegbier7.addEventListener("wegbier:positionChanged", function(event) {
-      moveable7.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- SMALL MOVEABLE SCROLL 2 (Y-axis only, overscroll) ################### -->
-
-  <style>
-    #small-moveable-scroll-2 {
-      top: 1970px;
-    }
-
-    #moveable-8 {
-      width: 150px;
-      height: 150px;
-    }
-  </style>
-
-  <div class="container-title" id="small-moveable-scroll-2">
-    Small moveable (Y-axis scroll):
-    <div class="container" id="container-8">
-      <div class="moveable" id="moveable-8"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container8 = document.getElementById('container-8'),
-      moveable8 = document.getElementById('moveable-8');
-
-    var wegbier8 = new Wegbier({
-      container: container8,
-      axis: 'y',
-      moveable: {
-        width: moveable8.clientWidth,
-        height: moveable8.clientHeight
-      }
-    });
-
-    wegbier8.addEventListener("wegbier:positionChanged", function(event) {
-      moveable8.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- SMALL MOVEABLE SCROLL 3 (small X) ################################### -->
-
-  <style>
-    #small-moveable-scroll-3 {
-      top: 2250px;
-    }
-
-    #moveable-9 {
-      width: 150px;
-      height: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="small-moveable-scroll-3">
-    Small moveable (2D scroll, small on X-axis):
-    <div class="container" id="container-9">
-      <div class="moveable" id="moveable-9"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container9 = document.getElementById('container-9'),
-      moveable9 = document.getElementById('moveable-9');
-
-    var wegbier9 = new Wegbier({
-      container: container9,
-      axis: 'xy',
-      moveable: {
-        width: moveable9.clientWidth,
-        height: moveable9.clientHeight
-      }
-    });
-
-    wegbier9.addEventListener("wegbier:positionChanged", function(event) {
-      moveable9.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- SMALL MOVEABLE SCROLL 4 (2D, small X, no overscroll) ################ -->
-
-  <style>
-    #small-moveable-scroll-4 {
-      top: 2530px;
-    }
-
-    #moveable-10 {
-      width: 150px;
-      height: 2000px;
-    }
-  </style>
-
-  <div class="container-title" id="small-moveable-scroll-4">
-    Small moveable (2D scroll, small on X-axis, no overscroll):
-    <div class="container" id="container-10">
-      <div class="moveable" id="moveable-10"></div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container10 = document.getElementById('container-10'),
-      moveable10 = document.getElementById('moveable-10');
-
-    var wegbier10 = new Wegbier({
-      container: container10,
-      axis: 'xy',
-      overscroll: false,
-      moveable: {
-        width: moveable10.clientWidth,
-        height: moveable10.clientHeight
-      }
-    });
-
-    wegbier10.addEventListener("wegbier:positionChanged", function(event) {
-      moveable10.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
-  <!-- NESTED SCROLL 1 (Y-scroll containing X-scroll, both overscroll) ##### -->
-
-  <style>
-    #nested-scroll-1 {
-      top: 2810px;
-    }
-
-    #moveable-11 {
-      height: 600px;
-    }
-
-    #container-12 {
-      top: 100px;
-      height: 100px;
-    }
-
-    #moveable-12 {
-      width: 2000px;
-      height: 100px;
-    }
-  </style>
-
-  <div class="container-title" id="nested-scroll-1">
-    Nested Scroll (Y-scroll containing X-scroll):
-    <div class="container" id="container-11">
-      <div class="moveable" id="moveable-11">
-        <div class="container" id="container-12">
-          <div class="moveable" id="moveable-12"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script type="text/javascript">
-    var container11 = document.getElementById('container-11'),
-      moveable11 = document.getElementById('moveable-11');
-
-    var wegbier11 = new Wegbier({
-      container: container11,
-      axis: 'y',
-      moveable: {
-        width: moveable11.clientWidth,
-        height: moveable11.clientHeight
-      }
-    });
-
-    wegbier11.addEventListener("wegbier:positionChanged", function(event) {
-      moveable11.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-
-    var container12 = document.getElementById('container-12'),
-      moveable12 = document.getElementById('moveable-12');
-
-    var wegbier12 = new Wegbier({
-      container: container12,
-      axis: 'x',
-      lock: true,   // locks the "parent" when this scroll is being used
-      moveable: {
-        width: moveable12.clientWidth,
-        height: moveable12.clientHeight
-      }
-    });
-
-    wegbier12.addEventListener("wegbier:positionChanged", function(event) {
-      moveable12.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-    })
-  </script>
-
 </body>
 
-<!-- NESTED SCROLL 2 (2D-scroll overscroll contains 2D-scroll no overscroll) -->
-
-<style>
-  #nested-scroll-2 {
-    top: 3090px;
-  }
-
-  #moveable-13 {
-    width: 450px;
-    height: 450px;
-  }
-
-  #container-14 {
-    top: 150px;
-    left: 150px;
-    width: 150px;
-    height: 150px;
-  }
-
-  #moveable-14 {
-    width: 300px;
-    height: 300px;
-  }
-</style>
-
-<div class="container-title" id="nested-scroll-2">
-  Nested Scroll (both 2D, nested has no overscroll):
-  <div class="container" id="container-13">
-    <div class="moveable" id="moveable-13">
-      <div class="container" id="container-14">
-        <div class="moveable" id="moveable-14"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script type="text/javascript">
-  var container13 = document.getElementById('container-13'),
-    moveable13 = document.getElementById('moveable-13');
-
-  var wegbier13 = new Wegbier({
-    container: container13,
-    axis: 'xy',
-    moveable: {
-      width: moveable13.clientWidth,
-      height: moveable13.clientHeight
-    }
-  });
-
-  wegbier13.addEventListener("wegbier:positionChanged", function(event) {
-    moveable13.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-  })
-
-  var container14 = document.getElementById('container-14'),
-    moveable14 = document.getElementById('moveable-14');
-
-  var wegbier14 = new Wegbier({
-    container: container14,
-    axis: 'xy',
-    overscroll: false,
-    moveable: {
-      width: moveable14.clientWidth,
-      height: moveable14.clientHeight
-    }
-  });
-
-  wegbier14.addEventListener("wegbier:positionChanged", function(event) {
-    moveable14.style.webkitTransform = 'translate3d(' + event.data.x + 'px, ' + event.data.y + 'px, 0px)';
-  })
-</script>
-
-</body>
 </html>

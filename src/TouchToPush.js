@@ -106,7 +106,7 @@ export default class TouchToPush {
   _subscribePubsubs() {
     this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
 
-    this.sharedScope.subscribe('wegbier:freezeScroll', (shouldFreeze) => {
+    this.sharedScope.subscribe('spaeti:freezeScroll', (shouldFreeze) => {
         this._setEnabled(!shouldFreeze);
     });
   }
