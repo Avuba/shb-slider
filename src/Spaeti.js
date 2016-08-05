@@ -113,7 +113,7 @@ export default class Spaeti {
 
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -173,6 +173,27 @@ export default class Spaeti {
 
 
   _subscribePubsubs() {
+    // NEW NEW
+    this.touchToPush.addEventListener(this.touchToPush.events.pushBy, (event) => {
+      this._onPushBy(event.data);
+    });
+    this.touchToPush.addEventListener(this.touchToPush.events.momentum, (event) => {
+      this._onMomentum(event.data);
+    });
+
+    this.touchToPush.addEventListener(this.touchToPush.events.touchstart, () => {
+      this._state.isTouchActive = true;
+      if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
+        this._stopBounce();
+      }
+    });
+
+    this.touchToPush.addEventListener(this.touchToPush.events.touchend, () => {
+      this._state.isTouchActive = false;
+      this._checkForBounceStart();
+    });
+    // END NEW
+
     this.sharedScope.subscribe('main:refresh', this._onRefresh.bind(this));
     this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
 
@@ -196,11 +217,11 @@ export default class Spaeti {
   _onRefresh(config) {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
-    
+
     this._calculateParams();
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });

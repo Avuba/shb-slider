@@ -2,7 +2,7 @@ import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 
 
-let defaults = {
+const defaults = {
   config: {
     // main container for defining the boundaries of the scrollable area and
     // setting the event listeners. is expected to be a simple DOM node
@@ -71,17 +71,17 @@ let defaults = {
 };
 
 
-let topics = {
-  pushBy: 'touchToPush:pushBy',
-  touchstart: 'touchToPush:touchstart',
-  touchend: 'touchToPush:touchend',
-  finishTouchWithMomentum: 'touchToPush:finishTouchWithMomentum'
+const events = {
+  pushBy: 'pushBy',
+  touchstart: 'touchstart',
+  touchend: 'touchend',
+  momentum: 'momentum'
 };
 
 
 export default class TouchToPush {
-  constructor(config, sharedScope) {
-    this.sharedScope = sharedScope;
+  constructor(config) {
+    this.events = events;
 
     this._config = fUtils.cloneDeep(defaults.config);
     this._private = fUtils.cloneDeep(defaults.private);
@@ -95,33 +95,16 @@ export default class TouchToPush {
     // lock forces capture to be true
     if (this._config.lock) this._config.capture = true;
 
-    this._subscribePubsubs();
+    utils.addEventTargetInterface(this);
+
     this._bindEvents();
   }
 
 
-  // LIFECYCLE
+  // PUBLIC
 
 
-  _subscribePubsubs() {
-    this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
-
-    this.sharedScope.subscribe('spaeti:freezeScroll', (shouldFreeze) => {
-        this._setEnabled(!shouldFreeze);
-    });
-  }
-
-
-  _onDestroy() {
-    this._unbindEvents();
-    this._config.container = null;
-  }
-
-
-  // STATE AND BEHAVIOUR
-
-
-  _setEnabled(shouldEnable) {
+  setEnabled(shouldEnable) {
     this._private.isEnabled = shouldEnable;
 
     if (!this._private.isEnabled && this._state.isTouchActive) {
@@ -134,8 +117,24 @@ export default class TouchToPush {
 
       // publish a touchend event so that subscribers aren't left under the impression that there is
       // still a meaningful touch hanging
-      this.sharedScope.publish(topics.touchend);
+      // TODO remove
+      //this.sharedScope.publish(topics.touchend);
+      this.dispatchEvent(new Event(events.touchend));
     }
+  }
+
+
+  destroy() {
+    this._unbindEvents();
+    // TODO remove, this isn't the eventTarget's responsibility
+    /*
+    fUtils.forEach(this.listeners, (type) => {
+      fUtils.forEach(type, (callback) => {
+        this.removeEventListener(type, callback);
+      });
+    });
+    */
+    this._config.container = null;
   }
 
 
@@ -168,7 +167,9 @@ export default class TouchToPush {
     if (!this._private.isEnabled) return;
 
     this._state.isTouchActive = true;
-    this.sharedScope.publish(topics.touchstart, event);
+    // TODO remove
+    // this.sharedScope.publish(topics.touchstart, event);
+    this.dispatchEvent(new Event(events.touchstart));
 
     let newTouchPoint = this._eventToPoint(event);
     this._private.startPoint = newTouchPoint;
@@ -296,7 +297,11 @@ export default class TouchToPush {
       }
     }
 
-    this.sharedScope.publish(topics.pushBy, pushBy);
+    // TODO remove
+    // this.sharedScope.publish(topics.pushBy, pushBy);
+    let eventPushBy = new Event(events.pushBy);
+    eventPushBy.data = pushBy;
+    this.dispatchEvent(eventPushBy);
   }
 
 
@@ -317,7 +322,9 @@ export default class TouchToPush {
     }
 
     this._state.isTouchActive = false;
-    this.sharedScope.publish(topics.touchend, event);
+    // TODO remove
+    // this.sharedScope.publish(topics.touchend, event);
+    this.dispatchEvent(new Event(events.touchend));
 
     if (!this._config.momentum) return;
     if (this._private.ignoreMovements) return;
@@ -357,7 +364,11 @@ export default class TouchToPush {
       momentum[xy].pxPerFrame = avgPxPerFrame;
     });
 
-    this.sharedScope.publish(topics.finishTouchWithMomentum, momentum);
+    // TODO delete
+    // this.sharedScope.publish(topics.finishTouchWithMomentum, momentum);
+    let eventMomentum = new Event(events.momentum);
+    eventMomentum.data = momentum;
+    this.dispatchEvent(eventMomentum);
   }
 
 
