@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+
+  <title>Spaeti Kitchensink</title>
+
+  <style>
+    .container {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      width: 300px;
+      height: 450px;
+      background: #eee;
+      overflow: hidden;
+    }
+
+    .moveable {
+      position: absolute;
+      width: 300px;
+      height: 450px;
+      background: url('unicorn.jpg');
+      transform: translate3d(0px, 0px, 0px);
+      will-change: transform;
+    }
+
+    #moveable-1 {
+      background: url('pattern-01.jpg');
+    }
+
+    #moveable-2 {
+      background: url('pattern-02.jpg');
+    }
+
+    #moveable-3 {
+      background: url('pattern-03.jpg');
+    }
+
+    #moveable-4 {
+      background: url('pattern-04.jpg');
+    }
+
+    #moveable-5 {
+      background: url('pattern-05.jpg');
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="container" id="container-1">
+    <div class="moveable" id="moveable-1"></div>
+    <div class="moveable" id="moveable-2"></div>
+    <div class="moveable" id="moveable-3"></div>
+    <div class="moveable" id="moveable-4"></div>
+    <div class="moveable" id="moveable-5"></div>
+  </div>
+
+  <script src="Spaeti.js" charset="utf-8"></script>
+  <script type="text/javascript">
+    // testing
+    var container1 = document.getElementById('container-1');
+    var moveables1 = [];
+    for (var i = 1; i <= 5; i++) {
+      moveables1.push(document.getElementById('moveable-' + i));
+    }
+
+    var spaeti1 = new Spaeti({
+      container: container1,
+      slides: moveables1
+    });
+
+  </script>
+</body>
+
+</html>

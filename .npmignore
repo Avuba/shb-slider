@@ -1,0 +1,14 @@
+# the following are NEVER ignored
+#  package.json
+#  README (and its variants)
+#  CHANGELOG (and its variants)
+#  LICENSE / LICENCE
+
+# files
+.*
+webpack.config.babel.js
+
+# directories
+# ignored by default: node_modules
+*/
+!dist/
