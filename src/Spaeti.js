@@ -111,8 +111,11 @@ export default class Spaeti {
     this._calculateParams();
     this._bindBounce();
 
+    this._setSlideDimensions();
     this._resetSlidePositions();
-    this._updateSlidePositions();
+    requestAnimationFrame(() => {
+      this._updateSlidePositions();
+    });
   }
 
 
@@ -193,8 +196,11 @@ export default class Spaeti {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
     this._calculateParams();
+    this._setSlideDimensions();
     this._resetSlidePositions();
-    this._updateSlidePositions();
+    requestAnimationFrame(() => {
+      this._updateSlidePositions();
+    });
   }
 
 
@@ -341,6 +347,17 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
+  // sets the dimension of all slides to fill up the container
+  _setSlideDimensions() {
+    this._config.slides.forEach((moveable) => {
+      requestAnimationFrame(() => {
+        moveable.style.width = "100%";
+        moveable.style.height = "100%";
+      });
+    });
+  }
+
+
   // sets the position of all slides to the left of the container, so they aren't visible
   _resetSlidePositions() {
     this._config.slides.forEach((moveable) => {
@@ -352,41 +369,43 @@ export default class Spaeti {
 
 
   _updateSlidePositions() {
-    let updatedMoveableIndex = Math.round(-this._private.moveable.x / this._private.container.width);
+    let updatedSlideIndex = Math.round(-this._private.moveable.x / this._private.container.width);
 
     // constrain the calculated index when overscrolling
-    if (updatedMoveableIndex < 0) {
-      updatedMoveableIndex = 0;
+    if (updatedSlideIndex < 0) {
+      updatedSlideIndex = 0;
     }
-    else if (updatedMoveableIndex >= this._config.slides.length) {
-      updatedMoveableIndex = this._config.slides.length -1;
+    else if (updatedSlideIndex >= this._config.slides.length) {
+      updatedSlideIndex = this._config.slides.length -1;
     }
 
     // the following is necessary because scrolled-out slides can still be left with a bit visible
     // inside the container area (if the animation is fast); so we detect slide transitions and make
     // sure the "old" (scrolled-out) slide is pushed off limits and nothing is left hanging out.
-    if ((updatedMoveableIndex < this._private.currentSlideIndex
-        && this._private.currentSlideIndex +1 < this._config.slides.length)
-        || (updatedMoveableIndex > this._private.currentSlideIndex
-        && this._private.currentSlideIndex -1 >= 0)) {
-      this._config.slides[this._private.currentSlideIndex+1].style.webkitTransform = `translate3d(
+    // this behaviour is present in Android 6 Chrome (at least) but not on iOS 9.3.1 Safari
+    if (updatedSlideIndex > this._private.currentSlideIndex && this._private.currentSlideIndex - 1 >= 0) {
+      this._config.slides[this._private.currentSlideIndex - 1].style.webkitTransform = `translate3d(
+        ${this._private.container.width}px, 0px, 0px)`;
+    }
+    else if (updatedSlideIndex < this._private.currentSlideIndex && this._private.currentSlideIndex + 1 < this._config.slides.length) {
+      this._config.slides[this._private.currentSlideIndex + 1].style.webkitTransform = `translate3d(
         ${this._private.container.width}px, 0px, 0px)`;
     }
 
-    this._private.currentSlideIndex = updatedMoveableIndex;
+    this._private.currentSlideIndex = updatedSlideIndex;
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
 
     // apply the transform to the current slide
     this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
       ${this._private.currentMoveablePositionX}px, ${this._private.moveable.y}px, 0px)`;
 
-    // apply the transform to the previous slide (to the left)
+    // apply the transform to the slide to the left
     if (this._private.currentSlideIndex > 0) {
       this._config.slides[this._private.currentSlideIndex -1].style.webkitTransform = `translate3d(
         ${this._private.currentMoveablePositionX - this._private.container.width}px, ${this._private.moveable.y}px, 0px)`;
     }
 
-    // apply the transform to the next slide (to the right)
+    // apply the transform to the slide to the right
     if (this._private.currentSlideIndex < this._config.slides.length -1) {
       this._config.slides[this._private.currentSlideIndex +1].style.webkitTransform = `translate3d(
         ${this._private.currentMoveablePositionX + this._private.container.width}px, ${this._private.moveable.y}px, 0px)`;
@@ -506,7 +525,7 @@ export default class Spaeti {
       if (Math.abs(this._private.moveable[axis] - targetLeft) < this._private.container.width / 2) {
         bounceTarget = targetLeft;
       }
-      else if (Math.abs(targetRight - this._private.moveable[axis]) < this._private.container.width / 2) {
+      else {
         bounceTarget = targetRight;
       }
     }
