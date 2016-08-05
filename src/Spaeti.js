@@ -113,6 +113,7 @@ export default class Spaeti {
 
     this._setSlideDimensions();
     this._resetSlidePositions();
+    
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -195,9 +196,11 @@ export default class Spaeti {
   _onRefresh(config) {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
+    
     this._calculateParams();
     this._setSlideDimensions();
     this._resetSlidePositions();
+    
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -351,8 +354,8 @@ export default class Spaeti {
   _setSlideDimensions() {
     this._config.slides.forEach((moveable) => {
       requestAnimationFrame(() => {
-        moveable.style.width = "100%";
-        moveable.style.height = "100%";
+        moveable.style.width = '100%';
+        moveable.style.height = '100%';
       });
     });
   }
@@ -491,7 +494,8 @@ export default class Spaeti {
 
     if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
       this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
-    } else {
+    }
+    else {
       this._stopBounce();
     }
   }
