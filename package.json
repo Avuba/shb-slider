@@ -1,7 +1,7 @@
 {
   "name": "spaeti",
   "version": "0.0.1",
-  "description": "standalone touch handler class for framework independent js ui components",
+  "description": "standalone swiper UI element for javascript apps",
   "scripts": {
     "build": "webpack --mode=build",
     "start": "webpack-dev-server --inline --mode=dev --host=0.0.0.0 --port=8080"
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avuba/wegbier.git"
+    "url": "git+https://github.com/avuba/spaeti.git"
   },
   "author": "Avuba",
   "contributors": [
@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/avuba/wegbier/issues"
+    "url": "https://github.com/avuba/spaeti/issues"
   },
-  "homepage": "https://github.com/avuba/wegbier#readme"
+  "homepage": "https://github.com/avuba/spaeti#readme"
 }
