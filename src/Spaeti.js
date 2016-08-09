@@ -76,7 +76,8 @@ let defaults = {
         bounceStartTime: 0,
         bounceStartPosition: 0,
         bounceTargetPosition: 0
-      }
+      },
+      isAnimatedScroll: false
     },
     axis: ['x'],
     currentSlideIndex: 0,
@@ -97,7 +98,8 @@ let topics = {
 
 let events = {
   positionChanged: 'positionChanged',
-  slideChanged: 'slideChanged'
+  slideChanged: 'slideChanged',
+  animatedScrollEnd: 'animatedScrollEnd'
 };
 
 export default class Spaeti {
@@ -163,6 +165,7 @@ export default class Spaeti {
     });
 
     if (shouldAnimate === true) {
+      this._private.bounce.isAnimatedScroll = true;
       this._forXY((xy) => {
         this._startBounceOnAxis(xy, validPosition[xy], animateTimeMillis);
       });
@@ -538,6 +541,11 @@ export default class Spaeti {
   _stopBounce() {
     this._private.bounce.x.isActive = this._private.bounce.y.isActive = false;
     cancelAnimationFrame(this._private.currentFrame);
+
+    if (this._private.bounce.isAnimatedScroll) {
+      this._private.bounce.isAnimatedScroll = false;
+      this.dispatchEvent(new Event(events.animatedScrollEnd));
+    }
   }
 
 
