@@ -196,14 +196,14 @@ export default class Spaeti {
     this.sharedScope.subscribe('touchToPush:pushBy', this._onPushBy.bind(this));
     this.sharedScope.subscribe('touchToPush:finishTouchWithMomentum', this._onMomentum.bind(this));
 
-    this.sharedScope.subscribe('touchToPush:touchstart', (event) => {
+    this.sharedScope.subscribe('touchToPush:touchstart', () => {
       this._state.isTouchActive = true;
       if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
         this._stopBounce();
       }
     });
 
-    this.sharedScope.subscribe('touchToPush:touchend', (event) => {
+    this.sharedScope.subscribe('touchToPush:touchend', () => {
       this._state.isTouchActive = false;
       this._checkForBounceStart();
     });
@@ -275,7 +275,7 @@ export default class Spaeti {
     this._forXY((xy) => {
       let dimension = xy === 'x' ? 'width' : 'height';
       this._private.boundaries[xy].axisStart = 0;
-      this._private.boundaries[xy].axisEnd   = this._private.container[dimension] - this._private.moveable[dimension];
+      this._private.boundaries[xy].axisEnd = this._private.container[dimension] - this._private.moveable[dimension];
     });
   }
 
@@ -529,7 +529,7 @@ export default class Spaeti {
 
     this._updateCoords(newCoordinates);
 
-    if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
+    if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
       this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
     }
     else {
@@ -583,4 +583,4 @@ export default class Spaeti {
   _forXY(toExecute) {
     this._private.axis.forEach(toExecute);
   }
-};
+}
