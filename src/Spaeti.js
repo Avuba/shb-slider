@@ -95,6 +95,9 @@ let topics = {
   freezeScroll: 'spaeti:freezeScroll'
 };
 
+let events = {
+  slideChanged: 'slideChanged'
+}
 
 export default class Spaeti {
   constructor(config) {
@@ -107,13 +110,16 @@ export default class Spaeti {
     this.sharedScope = new SharedScope();
     this.touchToPush = new TouchToPush(config, this.sharedScope);
 
+    this.events = events;
+    utils.addEventDispatcher(this, this._config.container);
+
     this._subscribePubsubs();
     this._calculateParams();
     this._bindBounce();
 
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -196,11 +202,11 @@ export default class Spaeti {
   _onRefresh(config) {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
-    
+
     this._calculateParams();
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -395,7 +401,17 @@ export default class Spaeti {
         ${this._private.container.width}px, 0px, 0px)`;
     }
 
-    this._private.currentSlideIndex = updatedSlideIndex;
+    if (updatedSlideIndex != this._private.currentSlideIndex) {
+      let event = new Event(events.slideChanged);
+      event.data = {
+        previousIndex: this._private.currentSlideIndex,
+        currentIndex: updatedSlideIndex
+      };
+
+      this._private.currentSlideIndex = updatedSlideIndex;
+      this.dispatchEvent(event);
+    }
+
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
 
     // apply the transform to the current slide
