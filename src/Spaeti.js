@@ -363,8 +363,8 @@ export default class Spaeti {
 
       let event = new Event(events.positionChanged);
       event.data = {
-        positionPx: { x: this._private.moveable.x, y: this._private.moveable.y },
-        positionPercent: {
+        position: { x: this._private.moveable.x, y: this._private.moveable.y },
+        percent: {
           x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
           y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
         }
