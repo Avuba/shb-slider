@@ -105,7 +105,7 @@ export default class Spaeti {
     if (config) fUtils.mergeDeep(this._config, config);
 
     this.sharedScope = new SharedScope();
-    this.touchToPush = new TouchToPush(config, this.sharedScope);
+    this.touchToPush = new TouchToPush(this._config, this.sharedScope);
 
     this._subscribePubsubs();
     this._calculateParams();
@@ -113,7 +113,7 @@ export default class Spaeti {
 
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
@@ -196,11 +196,11 @@ export default class Spaeti {
   _onRefresh(config) {
     if (config) fUtils.mergeDeep(this._config, config);
     this._private.axis = this._config.axis.split('');
-    
+
     this._calculateParams();
     this._setSlideDimensions();
     this._resetSlidePositions();
-    
+
     requestAnimationFrame(() => {
       this._updateSlidePositions();
     });
