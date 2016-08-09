@@ -140,13 +140,13 @@ export default class Spaeti {
   }
 
 
-  scrollToSlide(slideIndex) {
-    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y);
+  scrollToSlide(slideIndex, shouldAnimate, animateTimeMillis) {
+    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y, shouldAnimate, animateTimeMillis);
   }
 
 
   // instantly scrolls to a given position or nearest possible
-  scrollToPosition(x, y) {
+  scrollToPosition(x, y, shouldAnimate, animateTimeMillis) {
     let position = { x: x, y: y },
       validPosition = { x: 0, y: 0 };
 
@@ -162,7 +162,14 @@ export default class Spaeti {
       }
     });
 
-    this._updateCoords(validPosition);
+    if (shouldAnimate === true) {
+      this._forXY((xy) => {
+        this._startBounceOnAxis(xy, validPosition[xy], animateTimeMillis);
+      });
+    }
+    else {
+      this._updateCoords(validPosition);
+    }
   }
 
 
@@ -468,16 +475,16 @@ export default class Spaeti {
   }
 
 
-  _startBounceOnAxis(axis, targetPositionPx) {
+  _startBounceOnAxis(axis, targetPositionPx, animateTimeMillis) {
     cancelAnimationFrame(this._private.currentFrame);
 
     let bounce = this._private.bounce;
 
     bounce[axis].isActive = true;
-    bounce[axis].bounceStartTime = Date.now();
     bounce[axis].bounceStartPosition = this._private.moveable[axis];
     bounce[axis].bounceTargetPosition = targetPositionPx;
-
+    bounce[axis].bounceStartTime = Date.now();
+    bounce[axis].bounceAnimateTime = animateTimeMillis > 0 ? animateTimeMillis : this._config.bounceTime;
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
   }
 
@@ -501,12 +508,12 @@ export default class Spaeti {
         // doesn't make sense because:
         // a) exponential functions never really cross the axis;
         // b) some ease functions will cross the axes (spring-like effect).
-        if (timePassed < this._config.bounceTime) {
+        if (timePassed < bounce[xy].bounceAnimateTime) {
           newCoordinates[xy] = utils.easeOutCubic(
             timePassed,
             bounce[xy].bounceStartPosition,
             bounce[xy].bounceTargetPosition - bounce[xy].bounceStartPosition,
-            this._config.bounceTime);
+            bounce[xy].bounceAnimateTime);
         }
         else {
           // snap the moveable to it's target, un-flag bounce and overscroll
