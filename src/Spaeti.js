@@ -98,7 +98,8 @@ let topics = {
 
 let events = {
   positionChanged: 'positionChanged',
-  slideChanged: 'slideChanged',
+  slideChangeStart: 'slideChangeStart',
+  slideChangeEnd: 'slideChangeEnd',
   animatedScrollEnd: 'animatedScrollEnd'
 };
 
@@ -423,7 +424,7 @@ export default class Spaeti {
     }
 
     if (updatedSlideIndex != this._private.currentSlideIndex) {
-      let event = new Event(events.slideChanged);
+      let event = new Event(events.slideChangeStart);
       event.data = {
         previousIndex: this._private.currentSlideIndex,
         currentIndex: updatedSlideIndex
