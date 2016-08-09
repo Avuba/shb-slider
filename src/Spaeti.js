@@ -86,7 +86,7 @@ let defaults = {
   state: {
     isTouchActive: false
   }
-}
+};
 
 
 let topics = {
@@ -96,8 +96,9 @@ let topics = {
 };
 
 let events = {
+  positionChanged: 'positionChanged',
   slideChanged: 'slideChanged'
-}
+};
 
 export default class Spaeti {
   constructor(config) {
@@ -343,12 +344,22 @@ export default class Spaeti {
       }
     });
 
-    // APPLY NEW COORDINATES
+    // APPLY NEW COORDINATES AND DISPATCH EVENT
 
     if (this._private.moveable.x !== newCoordinates.x || this._private.moveable.y !== newCoordinates.y) {
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
       this._updateSlidePositions();
+
+      let event = new Event(events.positionChanged);
+      event.data = {
+        positionPx: { x: this._private.moveable.x, y: this._private.moveable.y },
+        positionPercent: {
+          x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
+          y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
+        }
+      };
+      this.dispatchEvent(event);
     }
   }
 
