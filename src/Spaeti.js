@@ -133,13 +133,13 @@ export default class Spaeti {
   }
 
 
-  scrollToSlide(slideIndex, shouldAnimate, animateTimeMillis) {
-    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y, shouldAnimate, animateTimeMillis);
+  scrollToSlide(slideIndex, shouldAnimate, animateTime) {
+    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y, shouldAnimate, animateTime);
   }
 
 
   // instantly scrolls to a given position or nearest possible
-  scrollToPosition(x, y, shouldAnimate, animateTimeMillis) {
+  scrollToPosition(x, y, shouldAnimate, animateTime) {
     let position = { x: x, y: y },
       validPosition = { x: 0, y: 0 };
 
@@ -157,7 +157,7 @@ export default class Spaeti {
 
     if (shouldAnimate === true) {
       this._forXY((xy) => {
-        this._startBounceOnAxis(xy, validPosition[xy], animateTimeMillis);
+        this._startBounceOnAxis(xy, validPosition[xy], animateTime);
       });
     }
     else {
@@ -448,7 +448,7 @@ export default class Spaeti {
   }
 
 
-  _startBounceOnAxis(axis, targetPositionPx, animateTimeMillis) {
+  _startBounceOnAxis(axis, targetPositionPx, animateTime) {
     cancelAnimationFrame(this._private.currentFrame);
 
     let bounce = this._private.bounce;
@@ -457,7 +457,7 @@ export default class Spaeti {
     bounce[axis].bounceStartPosition = this._private.moveable[axis];
     bounce[axis].bounceTargetPosition = targetPositionPx;
     bounce[axis].bounceStartTime = Date.now();
-    bounce[axis].bounceAnimateTime = animateTimeMillis > 0 ? animateTimeMillis : this._config.bounceTime;
+    bounce[axis].bounceAnimateTime = animateTime > 0 ? animateTime : this._config.bounceTime;
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
   }
 
