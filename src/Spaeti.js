@@ -101,8 +101,8 @@ let topics = {
 let events = {
   positionChanged: 'positionChanged',
   positionStable: 'positionStable',
+  slideChange: 'slideChange',
   slideChangeStart: 'slideChangeStart',
-  slideChangeBetween: 'slideChangeBetween',
   slideChangeEnd: 'slideChangeEnd'
 };
 
@@ -371,7 +371,7 @@ export default class Spaeti {
 
       let event = new Event(events.positionChanged);
       event.data = {
-        position: { 
+        position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
         },
@@ -435,17 +435,25 @@ export default class Spaeti {
 
     // in case the slide changed, update the previous and current index, send out an event
     if (updatedSlideIndex !== this._private.currentSlideIndex) {
-      let eventType = this._private.previousSlideIndex < 0 ? events.slideChangeStart : events.slideChangeBetween,
-        event = new Event(eventType);
+      let isSlideChangeStart = this._private.previousSlideIndex < 0;
 
       this._private.previousSlideIndex = this._private.currentSlideIndex;
       this._private.currentSlideIndex = updatedSlideIndex;
 
+      if (isSlideChangeStart) {
+        let event = new Event(events.slideChangeStart);
+        event.data = {
+          previousIndex: this._private.previousSlideIndex,
+          currentIndex: this._private.currentSlideIndex
+        };
+        this.dispatchEvent(event);
+      }
+
+      let event = new Event(events.slideChange);
       event.data = {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       };
-      
       this.dispatchEvent(event);
     }
 
@@ -504,7 +512,7 @@ export default class Spaeti {
     bounce[axis].bounceTargetPosition = targetPositionPx;
     bounce[axis].bounceStartTime = Date.now();
     bounce[axis].bounceAnimateTime = animateTime > 0 ? animateTime : this._config.bounceTime;
-    
+
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
   }
 
@@ -570,12 +578,12 @@ export default class Spaeti {
   _checkForSlideChangeEndEvent() {
     if (this._private.previousSlideIndex >= 0) {
       let event = new Event(events.slideChangeEnd);
-      
+
       event.data = {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       };
-      
+
       this.dispatchEvent(event);
       this._private.previousSlideIndex = -1;
     }
@@ -585,19 +593,19 @@ export default class Spaeti {
   _checkForPositionStableEvent() {
     if (!this._state.isTouchActive && !this._private.bounce.x.isActive && !this._private.bounce.y.isActive) {
       let event = new Event(events.positionStable);
-      
+
       event.data = {
         position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
-          
+
         },
         percent: {
           x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
           y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
         }
       };
-      
+
       this.dispatchEvent(event);
     }
   }
