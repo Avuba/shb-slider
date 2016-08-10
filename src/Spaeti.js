@@ -125,7 +125,7 @@ export default class Spaeti {
     this._calculateParams();
     this._bindBounce();
 
-    this._setSlideDimensions();
+    this._setupDomElements();
     this._resetSlidePositions();
 
     requestAnimationFrame(() => {
@@ -388,12 +388,19 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  // sets the dimension of all slides to fill up the container
-  _setSlideDimensions() {
-    this._config.slides.forEach((moveable) => {
+  // sets the attributes of dom elements for use with the spaeti
+  _setupDomElements() {
+    requestAnimationFrame(() => {
+      this._config.container.style.overflow = 'hidden';
+    });
+
+    this._config.slides.forEach((slide) => {
       requestAnimationFrame(() => {
-        moveable.style.width = '100%';
-        moveable.style.height = '100%';
+        slide.style.width = '100%';
+        slide.style.height = '100%';
+        slide.style.position = 'absolute';
+        slide.style.transform = 'translate3d(0px, 0px, 0px)';
+        slide.style.willChange = 'transform';
       });
     });
   }
