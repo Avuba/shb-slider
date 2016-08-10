@@ -99,10 +99,10 @@ let topics = {
 
 let events = {
   positionChanged: 'positionChanged',
+  positionStable: 'positionStable',
   slideChangeStart: 'slideChangeStart',
   slideChangeBetween: 'slideChangeBetween',
-  slideChangeEnd: 'slideChangeEnd',
-  animatedScrollEnd: 'animatedScrollEnd'
+  slideChangeEnd: 'slideChangeEnd'
 };
 
 export default class Spaeti {
@@ -211,6 +211,7 @@ export default class Spaeti {
       this._checkForBounceStart();
       if (!this._private.bounce.x.isActive && !this._private.bounce.x.isActive) {
         this._checkForSlideChangeEndEvent();
+        this._checkForPositionStableEvent();
       }
     });
   }
@@ -440,8 +441,6 @@ export default class Spaeti {
         currentIndex: this._private.currentSlideIndex
       };
       this.dispatchEvent(event);
-
-
     }
 
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
@@ -554,15 +553,11 @@ export default class Spaeti {
     cancelAnimationFrame(this._private.currentFrame);
 
     this._checkForSlideChangeEndEvent();
-
-    if (this._private.bounce.isAnimatedScroll) {
-      this._private.bounce.isAnimatedScroll = false;
-      this.dispatchEvent(new Event(events.animatedScrollEnd));
-    }
+    this._checkForPositionStableEvent();
   }
 
 
-  // EVENTS
+  // EVENT-CHECKING
 
 
   _checkForSlideChangeEndEvent() {
@@ -574,6 +569,21 @@ export default class Spaeti {
       };
       this.dispatchEvent(event);
       this._private.previousSlideIndex = -1;
+    }
+  }
+
+
+  _checkForPositionStableEvent() {
+    if (!this._state.isTouchActive && !this._private.bounce.x.isActive && !this._private.bounce.y.isActive) {
+      let event = new Event(events.positionStable);
+      event.data = {
+        position: { x: this._private.moveable.x, y: this._private.moveable.y },
+        percent: {
+          x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
+          y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
+        }
+      };
+      this.dispatchEvent(event);
     }
   }
 
