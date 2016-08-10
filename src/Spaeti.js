@@ -81,6 +81,7 @@ let defaults = {
     },
     axis: ['x'],
     currentSlideIndex: 0,
+    previousSlideIndex: -1,
     currentMoveablePositionX: 0
   },
 
@@ -99,6 +100,7 @@ let topics = {
 let events = {
   positionChanged: 'positionChanged',
   slideChangeStart: 'slideChangeStart',
+  slideChangeBetween: 'slideChangeBetween',
   slideChangeEnd: 'slideChangeEnd',
   animatedScrollEnd: 'animatedScrollEnd'
 };
@@ -207,6 +209,9 @@ export default class Spaeti {
     this.sharedScope.subscribe('touchToPush:touchend', () => {
       this._state.isTouchActive = false;
       this._checkForBounceStart();
+      if (!this._private.bounce.x.isActive && !this._private.bounce.x.isActive) {
+        this._checkForSlideChangeEndEvent();
+      }
     });
   }
 
@@ -424,14 +429,19 @@ export default class Spaeti {
     }
 
     if (updatedSlideIndex != this._private.currentSlideIndex) {
-      let event = new Event(events.slideChangeStart);
-      event.data = {
-        previousIndex: this._private.currentSlideIndex,
-        currentIndex: updatedSlideIndex
-      };
+      let eventType = this._private.previousSlideIndex < 0 ? events.slideChangeStart : events.slideChangeBetween,
+        event = new Event(eventType);
 
+      this._private.previousSlideIndex = this._private.currentSlideIndex;
       this._private.currentSlideIndex = updatedSlideIndex;
+
+      event.data = {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      };
       this.dispatchEvent(event);
+
+
     }
 
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
@@ -543,9 +553,27 @@ export default class Spaeti {
     this._private.bounce.x.isActive = this._private.bounce.y.isActive = false;
     cancelAnimationFrame(this._private.currentFrame);
 
+    this._checkForSlideChangeEndEvent();
+
     if (this._private.bounce.isAnimatedScroll) {
       this._private.bounce.isAnimatedScroll = false;
       this.dispatchEvent(new Event(events.animatedScrollEnd));
+    }
+  }
+
+
+  // EVENTS
+
+
+  _checkForSlideChangeEndEvent() {
+    if (this._private.previousSlideIndex >= 0) {
+      let event = new Event(events.slideChangeEnd);
+      event.data = {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      };
+      this.dispatchEvent(event);
+      this._private.previousSlideIndex = -1;
     }
   }
 
