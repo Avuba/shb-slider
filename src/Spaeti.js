@@ -400,7 +400,7 @@ export default class Spaeti {
         slide.style.height = '100%';
         slide.style.position = 'absolute';
         slide.style.transform = 'translate3d(0px, 0px, 0px)';
-        slide.style['will-change'] = 'transform';
+        slide.style.willChange = 'transform';
       });
     });
   }
