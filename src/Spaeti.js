@@ -598,7 +598,6 @@ export default class Spaeti {
         position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
-
         },
         percent: {
           x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
