@@ -150,7 +150,6 @@ export default class Spaeti {
   }
 
 
-  // instantly scrolls to a given position or nearest possible
   scrollToPosition(x, y, shouldAnimate, animateTime) {
     let position = { x: x, y: y },
       validPosition = { x: 0, y: 0 };
@@ -429,6 +428,7 @@ export default class Spaeti {
         ${this._private.container.width}px, 0px, 0px)`;
     }
 
+    // in case the slide changed, update the previous and current index, send out an event
     if (updatedSlideIndex != this._private.currentSlideIndex) {
       let eventType = this._private.previousSlideIndex < 0 ? events.slideChangeStart : events.slideChangeBetween,
         event = new Event(eventType);
