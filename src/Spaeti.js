@@ -391,7 +391,6 @@ export default class Spaeti {
   // sets the attributes of dom elements for use with the spaeti
   _setupDomElements() {
     requestAnimationFrame(() => {
-      this._config.container.style.position = 'absolute';
       this._config.container.style.overflow = 'hidden';
     });
 
