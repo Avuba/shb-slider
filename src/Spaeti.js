@@ -97,6 +97,7 @@ let topics = {
   freezeScroll: 'spaeti:freezeScroll'
 };
 
+
 let events = {
   positionChanged: 'positionChanged',
   positionStable: 'positionStable',
@@ -104,6 +105,7 @@ let events = {
   slideChangeBetween: 'slideChangeBetween',
   slideChangeEnd: 'slideChangeEnd'
 };
+
 
 export default class Spaeti {
   constructor(config) {
