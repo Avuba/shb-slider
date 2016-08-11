@@ -201,8 +201,8 @@ export default class TouchToPush {
 
 
   _onTouchStart(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     this._state.isTouchActive = true;
     this.sharedScope.publish(topics.touchstart, event);
@@ -219,8 +219,8 @@ export default class TouchToPush {
 
 
   _onTouchMove(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     if (this._private.ignoreMovements) return;
 
@@ -330,8 +330,8 @@ export default class TouchToPush {
 
 
   _onTouchEnd(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     // this forces the re-creation of all touch properties when calling _checkForSetNewStartParams()
     // on line 198 inside _onTouchMove()
@@ -387,8 +387,8 @@ export default class TouchToPush {
 
 
   _onTouchCancel(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     this._state.isTouchActive = false;
   }
