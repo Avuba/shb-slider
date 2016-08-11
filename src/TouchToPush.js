@@ -126,14 +126,6 @@ export default class TouchToPush {
 
   destroy() {
     this._unbindEvents();
-    // TODO remove, this isn't the eventTarget's responsibility
-    /*
-    fUtils.forEach(this.listeners, (type) => {
-      fUtils.forEach(type, (callback) => {
-        this.removeEventListener(type, callback);
-      });
-    });
-    */
     this._config.container = null;
   }
 
@@ -163,8 +155,8 @@ export default class TouchToPush {
 
 
   _onTouchStart(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     this._state.isTouchActive = true;
     // TODO remove
@@ -195,8 +187,8 @@ export default class TouchToPush {
 
 
   _onTouchMove(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     if (this._private.ignoreMovements) return;
 
@@ -306,8 +298,8 @@ export default class TouchToPush {
 
 
   _onTouchEnd(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     // if another finger is still touching the target, we start a new path
     // instead of ending the touch sequence
@@ -373,8 +365,8 @@ export default class TouchToPush {
 
 
   _onTouchCancel(event) {
-    event.preventDefault();
     if (!this._private.isEnabled) return;
+    event.preventDefault();
 
     this._state.isTouchActive = false;
   }

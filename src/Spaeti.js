@@ -1,8 +1,7 @@
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
-import { default as SharedScope } from './SharedScope.js';
 import { default as TouchToPush } from './TouchToPush.js';
-
+import { default as Bounce } from './Bounce.js';
 
 let defaults = {
   config: {
@@ -27,7 +26,7 @@ let defaults = {
     bounceTime: 500,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
-    minMomentumForTransition: 20
+    minMomentumForTransition: 5
   },
 
   private: {
@@ -80,21 +79,22 @@ let defaults = {
     },
     axis: ['x'],
     currentSlideIndex: 0,
+    previousSlideIndex: -1,
     currentMoveablePositionX: 0
   },
 
   state: {
     isTouchActive: false
   }
-}
-
-
-let topics = {
-  refresh: 'main:refresh',
-  destroy: 'main:destroy',
-  freezeScroll: 'spaeti:freezeScroll'
 };
 
+let events = {
+  positionChanged: 'positionChanged',
+  positionStable: 'positionStable',
+  slideChange: 'slideChange',
+  slideChangeStart: 'slideChangeStart',
+  slideChangeEnd: 'slideChangeEnd'
+};
 
 export default class Spaeti {
   constructor(config) {
@@ -104,14 +104,16 @@ export default class Spaeti {
 
     if (config) fUtils.mergeDeep(this._config, config);
 
-    this.sharedScope = new SharedScope();
-    this.touchToPush = new TouchToPush(config, this.sharedScope);
+    this.touchToPush = new TouchToPush(this._config);
+    this.bounce = new Bounce(this._config);
 
-    this._subscribePubsubs();
+    this.events = events;
+    utils.addEventTargetInterface(this);
+
     this._calculateParams();
-    this._bindBounce();
+    this._subscribeToEvents();
 
-    this._setSlideDimensions();
+    this._setupDomElements();
     this._resetSlidePositions();
 
     requestAnimationFrame(() => {
@@ -123,145 +125,32 @@ export default class Spaeti {
   // PUBLIC
 
 
-  refresh(config) {
-    this.sharedScope.publish(topics.refresh, config);
+  refresh() {
+
   }
 
 
   destroy() {
-    this.sharedScope.publish(topics.destroy);
-  }
-
-
-  scrollToSlide(slideIndex) {
-    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y);
-  }
-
-
-  // instantly scrolls to a given position or nearest possible
-  scrollToPosition(x, y) {
-    let position = { x: x, y: y },
-      validPosition = { x: 0, y: 0 };
-
-    this._forXY((xy) => {
-      validPosition[xy] = position[xy];
-
-      // check if coordinates are within bounds, constrain them otherwise
-      if (validPosition[xy] > this._private.boundaries[xy].axisStart) {
-        validPosition[xy] = this._private.boundaries[xy].axisStart;
-      }
-      else if (validPosition[xy] < this._private.boundaries[xy].axisEnd) {
-        validPosition[xy] = this._private.boundaries[xy].axisEnd;
-      }
-    });
-
-    this._updateCoords(validPosition);
+    this.touchToPush.destroy();
   }
 
 
   freezeScroll(shouldFreeze) {
-    this.sharedScope.publish(topics.freezeScroll, shouldFreeze);
-  }
-
-
-  getBoundaries() {
-    return fUtils.cloneDeep(this._private.boundaries);
+    this.touchToPush.setEnabled(!shouldFreeze);
   }
 
 
   // LIFECYCLE
 
 
-  _subscribePubsubs() {
-    // NEW NEW
+  _subscribeToEvents() {
     this.touchToPush.addEventListener(this.touchToPush.events.pushBy, (event) => {
       this._onPushBy(event.data);
     });
-    this.touchToPush.addEventListener(this.touchToPush.events.momentum, (event) => {
-      this._onMomentum(event.data);
-    });
-
-    this.touchToPush.addEventListener(this.touchToPush.events.touchstart, () => {
-      this._state.isTouchActive = true;
-      if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
-        this._stopBounce();
-      }
-    });
-
-    this.touchToPush.addEventListener(this.touchToPush.events.touchend, () => {
-      this._state.isTouchActive = false;
-      this._checkForBounceStart();
-    });
-    // END NEW
-
-    this.sharedScope.subscribe('main:refresh', this._onRefresh.bind(this));
-    this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
-
-    this.sharedScope.subscribe('touchToPush:pushBy', this._onPushBy.bind(this));
-    this.sharedScope.subscribe('touchToPush:finishTouchWithMomentum', this._onMomentum.bind(this));
-
-    this.sharedScope.subscribe('touchToPush:touchstart', (event) => {
-      this._state.isTouchActive = true;
-      if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
-        this._stopBounce();
-      }
-    });
-
-    this.sharedScope.subscribe('touchToPush:touchend', (event) => {
-      this._state.isTouchActive = false;
-      this._checkForBounceStart();
-    });
   }
 
 
-  _onRefresh(config) {
-    if (config) fUtils.mergeDeep(this._config, config);
-    this._private.axis = this._config.axis.split('');
-
-    this._calculateParams();
-    this._setSlideDimensions();
-    this._resetSlidePositions();
-
-    requestAnimationFrame(() => {
-      this._updateSlidePositions();
-    });
-  }
-
-
-  _onDestroy() {
-    this._config.container = null;
-    this._config.slides = null;
-  }
-
-
-  // COORDS AND MOVEMENT
-
-
-  _onMomentum(momentum) {
-    if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) {
-      return;
-    }
-    else {
-      let targetPositionPx;
-
-      // before calculating a target position, we also check if the we are in the first (or last)
-      // slide and if the current slide is already bouncing from a transition in the same
-      // direction as the momentum; so if the user's finger lifts when already transitioning to the
-      // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
-      if (momentum.x.direction > 0
-          && this._private.currentSlideIndex > 0
-          && this._private.currentMoveablePositionX > 0) {
-        targetPositionPx = (this._private.currentSlideIndex -1) * -this._private.container.width;
-      }
-      else if (momentum.x.direction < 0
-          && this._private.currentSlideIndex < this._config.slides.length -1
-          && this._private.currentMoveablePositionX < 0) {
-        targetPositionPx = (this._private.currentSlideIndex +1) * -this._private.container.width;
-      }
-
-      if (fUtils.is(targetPositionPx)) this._startBounceOnAxis('x', targetPositionPx);
-    }
-  }
+  // POSITION AND MOVEMENT
 
 
   _calculateParams() {
@@ -279,7 +168,7 @@ export default class Spaeti {
     this._forXY((xy) => {
       let dimension = xy === 'x' ? 'width' : 'height';
       this._private.boundaries[xy].axisStart = 0;
-      this._private.boundaries[xy].axisEnd   = this._private.container[dimension] - this._private.moveable[dimension];
+      this._private.boundaries[xy].axisEnd = this._private.container[dimension] - this._private.moveable[dimension];
     });
   }
 
@@ -298,23 +187,20 @@ export default class Spaeti {
 
       // OVERSCROLLING IS ALLOWED
 
+      // the further you overscroll, the smaller is the displacement; we multiply the displacement
+      // by a linear factor of the overscroll distance
       if (this._config.overscroll) {
-        let multiplier;
-
         // check on axis start (left or top)
-        if (pushBy[xy].direction > 0 && newCoordinates[xy] > boundaries[xy].axisStart) {
-          multiplier = utils.easeLinear(Math.abs(newCoordinates[xy]), 1, -1, this._config.maxTouchOverscroll);
+        if (pushBy[xy].direction > 0 && this._private.moveable[xy] > boundaries[xy].axisStart) {
+          pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable[xy]), 1, -1, this._config.maxTouchOverscroll);
         }
         // check on axis end (right or bottom)
-        else if (pushBy[xy].direction < 0 && newCoordinates[xy] < boundaries[xy].axisEnd) {
-          let rightBottom = boundaries[xy].axisEnd - newCoordinates[xy];
-          multiplier = utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
+        else if (pushBy[xy].direction < 0 && this._private.moveable[xy] < boundaries[xy].axisEnd) {
+          let rightBottom = boundaries[xy].axisEnd - this._private.moveable[xy];
+          pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
         }
 
-        if (multiplier) {
-          pxToAdd *= multiplier;
-          newCoordinates[xy] = this._private.moveable[xy] + pxToAdd;
-        }
+        newCoordinates[xy] = this._private.moveable[xy] + pxToAdd;
       }
 
       // OVERSCROLLING IS NOT ALLOWED
@@ -358,12 +244,25 @@ export default class Spaeti {
       }
     });
 
-    // APPLY NEW COORDINATES
+    // APPLY NEW COORDINATES AND DISPATCH EVENT
 
     if (this._private.moveable.x !== newCoordinates.x || this._private.moveable.y !== newCoordinates.y) {
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
       this._updateSlidePositions();
+
+      let event = new Event(events.positionChanged);
+      event.data = {
+        position: {
+          x: this._private.moveable.x,
+          y: this._private.moveable.y
+        },
+        percent: {
+          x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
+          y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
+        }
+      };
+      this.dispatchEvent(event);
     }
   }
 
@@ -371,12 +270,19 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  // sets the dimension of all slides to fill up the container
-  _setSlideDimensions() {
-    this._config.slides.forEach((moveable) => {
+  // sets the attributes of dom elements for use with the spaeti
+  _setupDomElements() {
+    requestAnimationFrame(() => {
+      this._config.container.style.overflow = 'hidden';
+    });
+
+    this._config.slides.forEach((slide) => {
       requestAnimationFrame(() => {
-        moveable.style.width = '100%';
-        moveable.style.height = '100%';
+        slide.style.width = '100%';
+        slide.style.height = '100%';
+        slide.style.position = 'absolute';
+        slide.style.transform = 'translate3d(0px, 0px, 0px)';
+        slide.style.willChange = 'transform';
       });
     });
   }
@@ -416,9 +322,33 @@ export default class Spaeti {
         ${this._private.container.width}px, 0px, 0px)`;
     }
 
-    this._private.currentSlideIndex = updatedSlideIndex;
+    // in case the slide changed, update the previous and current index, send out an event
+    if (updatedSlideIndex !== this._private.currentSlideIndex) {
+      let isSlideChangeStart = this._private.previousSlideIndex < 0;
+
+      this._private.previousSlideIndex = this._private.currentSlideIndex;
+      this._private.currentSlideIndex = updatedSlideIndex;
+
+      if (isSlideChangeStart) {
+        let event = new Event(events.slideChangeStart);
+        event.data = {
+          previousIndex: this._private.previousSlideIndex,
+          currentIndex: this._private.currentSlideIndex
+        };
+        this.dispatchEvent(event);
+      }
+
+      let event = new Event(events.slideChange);
+      event.data = {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      };
+      this.dispatchEvent(event);
+    }
+
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
 
+    console.log(this._private.currentSlideIndex);
     // apply the transform to the current slide
     this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
       ${this._private.currentMoveablePositionX}px, ${this._private.moveable.y}px, 0px)`;
@@ -437,129 +367,25 @@ export default class Spaeti {
   }
 
 
-  // BOUNCE
+  // EVENT-CHECKING
 
 
-  _bindBounce() {
-    this._private.boundBounce = this._runBounce.bind(this);
-  }
+  _checkForSlideChangeEndEvent() {
+    if (this._private.previousSlideIndex >= 0) {
+      let event = new Event(events.slideChangeEnd);
 
+      event.data = {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      };
 
-  _checkForBounceStart() {
-    this._forXY((xy) => {
-      this._checkForBounceStartOnAxis(xy);
-    });
-  }
-
-
-  _checkForBounceStartOnAxis(axis) {
-    if (!this._state.isTouchActive && !this._private.bounce[axis].isActive) {
-      let targetPosition = this._getClosestBounceTargetOnAxis(axis);
-      if (targetPosition !== this._private.moveable[axis]) {
-        this._startBounceOnAxis(axis, targetPosition);
-      }
+      this.dispatchEvent(event);
+      this._private.previousSlideIndex = -1;
     }
-  }
-
-
-  _startBounceOnAxis(axis, targetPositionPx) {
-    cancelAnimationFrame(this._private.currentFrame);
-
-    let bounce = this._private.bounce;
-
-    bounce[axis].isActive = true;
-    bounce[axis].bounceStartTime = Date.now();
-    bounce[axis].bounceStartPosition = this._private.moveable[axis];
-    bounce[axis].bounceTargetPosition = targetPositionPx;
-
-    this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
-  }
-
-
-  _runBounce() {
-    let newCoordinates = {
-      x: this._private.moveable.x,
-      y: this._private.moveable.y
-    };
-
-    this._forXY((xy) => {
-      if (this._private.bounce[xy].isActive) {
-        let bounce = this._private.bounce,
-          overscroll = this._private.overscroll,
-          timePassed = Date.now() - bounce[xy].bounceStartTime;
-
-        // CALCULATE NEW POSITION
-
-        // we test how much time has passed and not the overscroll value.
-        // testing the overscroll value (for zero or negative values)
-        // doesn't make sense because:
-        // a) exponential functions never really cross the axis;
-        // b) some ease functions will cross the axes (spring-like effect).
-        if (timePassed < this._config.bounceTime) {
-          newCoordinates[xy] = utils.easeOutCubic(
-            timePassed,
-            bounce[xy].bounceStartPosition,
-            bounce[xy].bounceTargetPosition - bounce[xy].bounceStartPosition,
-            this._config.bounceTime);
-        }
-        else {
-          // snap the moveable to it's target, un-flag bounce and overscroll
-          newCoordinates[xy] = bounce[xy].bounceTargetPosition;
-          bounce[xy].isActive = false;
-          overscroll[xy].isAxisStart = overscroll[xy].isAxisEnd = false;
-        }
-      }
-    });
-
-    this._updateCoords(newCoordinates);
-
-    if (this._private.bounce.x.isActive || this._private.bounce.y.isActive) {
-      this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
-    }
-    else {
-      this._stopBounce();
-    }
-  }
-
-
-  _stopBounce() {
-    this._private.bounce.x.isActive = this._private.bounce.y.isActive = false;
-    cancelAnimationFrame(this._private.currentFrame);
-  }
-
-
-  // HELPERS
-
-
-  // returns the closest bounce-to target on the given axis
-  _getClosestBounceTargetOnAxis(axis) {
-    let bounceTarget = this._private.moveable[axis];
-
-    // check the outer boundaries of the moveable
-    if (this._private.moveable[axis] > this._private.boundaries[axis].axisStart) {
-      bounceTarget = this._private.boundaries[axis].axisStart;
-    }
-    else if (this._private.moveable[axis] < this._private.boundaries[axis].axisEnd) {
-      bounceTarget = this._private.boundaries[axis].axisEnd;
-    }
-    // check the inner boundaries of the current moveable; only applies to x-axis
-    else if (axis === 'x') {
-      let targetLeft = this._private.currentSlideIndex * -this._private.container.width,
-        targetRight = targetLeft - this._private.container.width;
-
-      if (Math.abs(this._private.moveable[axis] - targetLeft) < this._private.container.width / 2) {
-        bounceTarget = targetLeft;
-      }
-      else {
-        bounceTarget = targetRight;
-      }
-    }
-
-    return bounceTarget;
   }
 
 
   _forXY(toExecute) {
     this._private.axis.forEach(toExecute);
   }
-};
+}
