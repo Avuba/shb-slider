@@ -27,7 +27,7 @@ let defaults = {
     bounceTime: 500,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
-    minMomentumForTransition: 20
+    minMomentumForTransition: 5
   },
 
   private: {
