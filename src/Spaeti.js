@@ -163,11 +163,7 @@ export default class Spaeti {
     });
 
     if (shouldAnimate === true) {
-      let startPosition = {
-        x: this._private.moveable.x,
-        y: this._private.moveable.y
-      };
-
+      let startPosition = { x: this._private.moveable.x, y: this._private.moveable.y };
       this.bounce.bounceToTarget(startPosition, validPosition, animateTime);
     }
     else {
@@ -351,16 +347,7 @@ export default class Spaeti {
       }
 
       if (fUtils.is(targetPositionPx)) {
-        let startPosition = {
-            x: this._private.moveable.x,
-            y: this._private.moveable.y
-          },
-          targetPosition = {
-            x: targetPositionPx,
-            y: this._private.moveable.y
-          };
-
-        this.bounce.bounceToTarget(startPosition, targetPosition);
+        this.bounce.bounceToTargetOnAxis('x', this._private.moveable.x, targetPositionPx);
       }
     }
   }
@@ -408,19 +395,6 @@ export default class Spaeti {
           y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
         }
       });
-      // TODO remove
-      // let event = new Event(events.positionChanged);
-      // event.data = {
-      //   position: {
-      //     x: this._private.moveable.x,
-      //     y: this._private.moveable.y
-      //   },
-      //   percent: {
-      //     x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
-      //     y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
-      //   }
-      // };
-      // this.dispatchEvent(event);
     }
   }
 
@@ -492,26 +466,12 @@ export default class Spaeti {
           previousIndex: this._private.previousSlideIndex,
           currentIndex: this._private.currentSlideIndex
         });
-        // TODO remove
-        // let event = new Event(events.slideChangeStart);
-        // event.data = {
-        //   previousIndex: this._private.previousSlideIndex,
-        //   currentIndex: this._private.currentSlideIndex
-        // };
-        // this.dispatchEvent(event);
       }
 
       this.dispatchEventWithData(new Event(events.slideChange), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       });
-      // TODO remove
-      // let event = new Event(events.slideChange);
-      // event.data = {
-      //   previousIndex: this._private.previousSlideIndex,
-      //   currentIndex: this._private.currentSlideIndex
-      // };
-      // this.dispatchEvent(event);
     }
 
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
@@ -534,7 +494,7 @@ export default class Spaeti {
   }
 
 
-  // EVENT-CHECKING
+  // CONDITION-CHECKING
 
 
   _checkForBounceStart() {
@@ -549,17 +509,7 @@ export default class Spaeti {
       let targetPositionOnAxis = this._getClosestBounceTargetOnAxis(axis);
 
       if (targetPositionOnAxis !== this._private.moveable[axis]) {
-        let startPosition = {
-            x: this._private.moveable.x,
-            y: this._private.moveable.y
-          },
-          targetPosition = {
-            x: this._private.moveable.x,
-            y: this._private.moveable.y
-          };
-        targetPosition[axis] = targetPositionOnAxis;
-
-        this.bounce.bounceToTarget(startPosition, targetPosition);
+        this.bounce.bounceToTargetOnAxis(axis, this._private.moveable[axis], targetPositionOnAxis);
       }
     }
   }
@@ -587,14 +537,6 @@ export default class Spaeti {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       });
-      // TODO remove
-      // let event = new Event(events.slideChangeEnd);
-      // event.data = {
-      //   previousIndex: this._private.previousSlideIndex,
-      //   currentIndex: this._private.currentSlideIndex
-      // };
-      // this.dispatchEvent(event);
-
       this._private.previousSlideIndex = -1;
     }
   }

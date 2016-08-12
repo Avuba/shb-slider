@@ -5,7 +5,7 @@ import { default as utils } from './utils.js';
 let defaults = {
   config: {
     axis: 'xy',
-    bounceTime: 500,
+    bounceTime: 500
   },
 
   private: {
@@ -53,6 +53,11 @@ export default class Bounce {
     });
   }
 
+  bounceToTargetOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime) {
+    if (this._private.axis.includes(axis)) {
+      this._startBounceOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime);
+    }
+  }
 
   stop() {
     this._stopBounce();
