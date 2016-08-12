@@ -113,11 +113,17 @@ export default class Spaeti {
 
 
   refresh(config) {
+    let previousWidth = this._private.container.width,
+      previousHeight = this._private.container.height;
+
     if (config) fUtils.mergeDeep(this._config, config);
 
     this._calculateParams();
-    this._setSlideDimensions();
     this._resetSlidePositions();
+
+    // since the slides are set to the same size as the container, we can restore the position
+    this._private.moveable.x *= this._private.container.width/previousWidth;
+    this._private.moveable.y *= this._private.container.height/previousHeight;
 
     requestAnimationFrame(() => {
       this._updateSlidePositions();
@@ -157,10 +163,12 @@ export default class Spaeti {
     });
 
     if (shouldAnimate === true) {
-      this._private.bounce.isAnimatedScroll = true;
-      this._forXY((xy) => {
-        this._startBounceOnAxis(xy, validPosition[xy], animateTime);
-      });
+      let startPosition = {
+        x: this._private.moveable.x,
+        y: this._private.moveable.y
+      };
+
+      this.bounce.bounceToTarget(startPosition, validPosition, animateTime);
     }
     else {
       this._updateCoords(validPosition);
@@ -248,7 +256,6 @@ export default class Spaeti {
 
 
   _handleBounceToPosition(event) {
-    // console.log("bounce update ", event.data.x);
     this._updateCoords(event.data);
   }
 
@@ -322,7 +329,6 @@ export default class Spaeti {
 
 
   _onMomentum(momentum) {
-    console.log("onMomentum");
     if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) {
       return;
     }
@@ -353,7 +359,7 @@ export default class Spaeti {
             x: targetPositionPx,
             y: this._private.moveable.y
           };
-        console.log("tell bounce to start");
+
         this.bounce.bounceToTarget(startPosition, targetPosition);
       }
     }
@@ -510,7 +516,6 @@ export default class Spaeti {
 
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
 
-    //console.log(this._private.currentSlideIndex);
     // apply the transform to the current slide
     this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
       ${this._private.currentMoveablePositionX}px, ${this._private.moveable.y}px, 0px)`;
@@ -561,7 +566,18 @@ export default class Spaeti {
 
 
   _checkForPositionStable() {
-
+    if (!this._state.isTouchActive && !this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.y) {
+      this.dispatchEventWithData(new Event(events.positionStable), {
+        position: {
+          x: this._private.moveable.x,
+          y: this._private.moveable.y
+        },
+        percent: {
+          x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
+          y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
+        }
+      });
+    }
   }
 
 

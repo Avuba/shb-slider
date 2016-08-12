@@ -49,7 +49,7 @@ export default class Bounce {
 
   bounceToTarget(startPosition, targetPosition, animateTime) {
     this._forXY((xy) => {
-      this._startBounceOnAxis(xy, startPosition[xy], targetPosition[xy]);
+      this._startBounceOnAxis(xy, startPosition[xy], targetPosition[xy], animateTime);
     });
   }
 
@@ -68,7 +68,6 @@ export default class Bounce {
 
 
   _startBounceOnAxis(axis, startPositionPx, targetPositionPx, animateTime) {
-    console.log("_startBounceOnAxis ", axis, targetPositionPx, animateTime);
     cancelAnimationFrame(this._private.currentFrame);
 
     if (!this._private.isActive.x && !this._private.isActive.y) {
@@ -116,7 +115,6 @@ export default class Bounce {
       }
     });
 
-    //console.log("dispatch bounceTo ", this._private.currentPosition.x);
     this.dispatchEventWithData(new Event(events.bounceToPosition), this._private.currentPosition);
 
     if (this._private.isActive.x || this._private.isActive.y) {
