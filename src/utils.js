@@ -86,6 +86,11 @@ _export.addEventTargetInterface = function(target) {
       stack[i].call(target, event);
     }
   };
+
+  target.dispatchEventWithData = (event, data) => {
+    event.data = data;
+    target.dispatchEvent(event);
+  };
 };
 
 

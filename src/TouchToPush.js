@@ -23,14 +23,14 @@ const defaults = {
     lock: false,
 
     // don't trigger momentum scrolling in case the distance between touchstart
-    // and touchend is less than minPxForMomentum
+    // and touchEnd is less than minPxForMomentum
     minPxForMomentum: 3,
 
     // maximal number of points we check for calculating the speed of momentum
-    // on touchend
+    // on touchEnd
     maxPointsForMomentum: 3,
 
-    // if the time between the last touchmove event and touchend is larger than
+    // if the time between the last touchmove event and touchEnd is larger than
     // this value, we don't start the momentum
     maxTimeDiffForMomentum: 66
   },
@@ -73,8 +73,8 @@ const defaults = {
 
 const events = {
   pushBy: 'pushBy',
-  touchstart: 'touchstart',
-  touchend: 'touchend',
+  touchStart: 'touchStart',
+  touchEnd: 'touchEnd',
   momentum: 'momentum'
 };
 
@@ -115,11 +115,11 @@ export default class TouchToPush {
 
       this._state.isTouchActive = false;
 
-      // publish a touchend event so that subscribers aren't left under the impression that there is
+      // publish a touchEnd event so that subscribers aren't left under the impression that there is
       // still a meaningful touch hanging
       // TODO remove
-      //this.sharedScope.publish(topics.touchend);
-      this.dispatchEvent(new Event(events.touchend));
+      //this.sharedScope.publish(topics.touchEnd);
+      this.dispatchEvent(new Event(events.touchEnd));
     }
   }
 
@@ -161,7 +161,7 @@ export default class TouchToPush {
     this._state.isTouchActive = true;
     // TODO remove
     // this.sharedScope.publish(topics.touchstart, event);
-    this.dispatchEvent(new Event(events.touchstart));
+    this.dispatchEvent(new Event(events.touchStart));
 
     let newTouchPoint = this._eventToPoint(event);
     this._private.startPoint = newTouchPoint;
@@ -315,8 +315,8 @@ export default class TouchToPush {
 
     this._state.isTouchActive = false;
     // TODO remove
-    // this.sharedScope.publish(topics.touchend, event);
-    this.dispatchEvent(new Event(events.touchend));
+    // this.sharedScope.publish(topics.touchEnd, event);
+    this.dispatchEvent(new Event(events.touchEnd));
 
     if (!this._config.momentum) return;
     if (this._private.ignoreMovements) return;

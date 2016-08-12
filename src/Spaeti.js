@@ -63,20 +63,7 @@ let defaults = {
         px: 0
       }
     },
-    bounce: {
-      x: {
-        isActive: false,
-        bounceStartTime: 0,
-        bounceStartPosition: 0,
-        bounceTargetPosition: 0
-      },
-      y: {
-        isActive: false,
-        bounceStartTime: 0,
-        bounceStartPosition: 0,
-        bounceTargetPosition: 0
-      }
-    },
+    isBounceOnAxis: { x: false, y: false },
     axis: ['x'],
     currentSlideIndex: 0,
     previousSlideIndex: -1,
@@ -144,11 +131,75 @@ export default class Spaeti {
 
 
   _subscribeToEvents() {
-    this.touchToPush.addEventListener(this.touchToPush.events.pushBy, (event) => {
-      this._onPushBy(event.data);
-    });
+    this.touchToPush.addEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
+    this.touchToPush.addEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.touchToPush.addEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
+    this.touchToPush.addEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
+
+    this.bounce.addEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
+    this.bounce.addEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
+    this.bounce.addEventListener(this.bounce.events.bounceToPosition, this._handleBounceToPosition.bind(this));
   }
 
+
+  _unsubscribeFromEvents() {
+    this.touchToPush.removeEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
+    this.touchToPush.removeEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.touchToPush.removeEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
+    this.touchToPush.removeEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
+
+    this.bounce.removeEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
+    this.bounce.removeEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
+    this.bounce.removeEventListener(this.bounce.events.bounceToPosition, this._handleBounceToPosition.bind(this));
+  }
+
+
+  // EVENT HANDLERS
+
+
+  _handleTouchStart() {
+    this._state.isTouchActive = true;
+    if (this._private.isBounceOnAxis.x || this._private.isBounceOnAxis.y) {
+      this.bounce.stop();
+    }
+  }
+
+
+  _handleTouchEnd() {
+    this._state.isTouchActive = false;
+    this._checkForBounceStart();
+    if (!this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.Y) {
+      this._checkForSlideChangeEnd();
+      this._checkForPositionStable();
+    }
+  }
+
+
+  _handlePushBy(event) {
+    this._onPushBy(event.data);
+  }
+
+
+  _handleMomentum(event) {
+    this._onMomentum(event.data);
+  }
+
+
+  _handleBounceStartOnAxis(event) {
+    this._private.isBounceOnAxis[event.data.axis] = true;
+  }
+
+
+  _handleBounceEndOnAxis(event) {
+    this._private.isBounceOnAxis[event.data.axis] = false;
+    this._checkForPositionStable();
+  }
+
+
+  _handleBounceToPosition(event) {
+    // console.log("bounce update ", event.data.x);
+    this._updateCoords(event.data);
+  }
 
   // POSITION AND MOVEMENT
 
@@ -157,7 +208,7 @@ export default class Spaeti {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
 
-    // the virstual moveable is the width of the combined slides. we assume that each slide
+    // the virtual moveable is the width of the combined slides. we assume that each slide
     // has the same width and height as the container
     this._private.moveable.width = this._private.container.width * this._config.slides.length;
     this._private.moveable.height = this._private.container.height;
@@ -219,6 +270,45 @@ export default class Spaeti {
   }
 
 
+  _onMomentum(momentum) {
+    console.log("onMomentum");
+    if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) {
+      return;
+    }
+    else {
+      let targetPositionPx;
+
+      // before calculating a target position, we also check if the we are in the first (or last)
+      // slide and if the current slide is already bouncing from a transition in the same
+      // direction as the momentum; so if the user's finger lifts when already transitioning to the
+      // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
+      if (momentum.x.direction > 0
+          && this._private.currentSlideIndex > 0
+          && this._private.currentMoveablePositionX > 0) {
+        targetPositionPx = (this._private.currentSlideIndex -1) * -this._private.container.width;
+      }
+      else if (momentum.x.direction < 0
+          && this._private.currentSlideIndex < this._config.slides.length -1
+          && this._private.currentMoveablePositionX < 0) {
+        targetPositionPx = (this._private.currentSlideIndex +1) * -this._private.container.width;
+      }
+
+      if (fUtils.is(targetPositionPx)) {
+        let startPosition = {
+            x: this._private.moveable.x,
+            y: this._private.moveable.y
+          },
+          targetPosition = {
+            x: targetPositionPx,
+            y: this._private.moveable.y
+          };
+        console.log("tell bounce to start");
+        this.bounce.bounceToTarget(startPosition, targetPosition);
+      }
+    }
+  }
+
+
   _updateCoords(newCoordinates) {
     this._forXY((xy) => {
 
@@ -251,8 +341,7 @@ export default class Spaeti {
       this._private.moveable.y = newCoordinates.y;
       this._updateSlidePositions();
 
-      let event = new Event(events.positionChanged);
-      event.data = {
+      this.dispatchEventWithData(new Event(events.positionChanged), {
         position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
@@ -261,8 +350,20 @@ export default class Spaeti {
           x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
           y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
         }
-      };
-      this.dispatchEvent(event);
+      });
+      // TODO remove
+      // let event = new Event(events.positionChanged);
+      // event.data = {
+      //   position: {
+      //     x: this._private.moveable.x,
+      //     y: this._private.moveable.y
+      //   },
+      //   percent: {
+      //     x: this._private.moveable.x / (this._private.moveable.width - this._private.container.width),
+      //     y: this._private.moveable.y / (this._private.moveable.height - this._private.container.height)
+      //   }
+      // };
+      // this.dispatchEvent(event);
     }
   }
 
@@ -330,25 +431,35 @@ export default class Spaeti {
       this._private.currentSlideIndex = updatedSlideIndex;
 
       if (isSlideChangeStart) {
-        let event = new Event(events.slideChangeStart);
-        event.data = {
+        this.dispatchEventWithData(new Event(events.slideChangeStart), {
           previousIndex: this._private.previousSlideIndex,
           currentIndex: this._private.currentSlideIndex
-        };
-        this.dispatchEvent(event);
+        });
+        // TODO remove
+        // let event = new Event(events.slideChangeStart);
+        // event.data = {
+        //   previousIndex: this._private.previousSlideIndex,
+        //   currentIndex: this._private.currentSlideIndex
+        // };
+        // this.dispatchEvent(event);
       }
 
-      let event = new Event(events.slideChange);
-      event.data = {
+      this.dispatchEventWithData(new Event(events.slideChange), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
-      };
-      this.dispatchEvent(event);
+      });
+      // TODO remove
+      // let event = new Event(events.slideChange);
+      // event.data = {
+      //   previousIndex: this._private.previousSlideIndex,
+      //   currentIndex: this._private.currentSlideIndex
+      // };
+      // this.dispatchEvent(event);
     }
 
     this._private.currentMoveablePositionX = this._private.moveable.x + (this._private.currentSlideIndex * this._private.container.width);
 
-    console.log(this._private.currentSlideIndex);
+    //console.log(this._private.currentSlideIndex);
     // apply the transform to the current slide
     this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
       ${this._private.currentMoveablePositionX}px, ${this._private.moveable.y}px, 0px)`;
@@ -370,18 +481,86 @@ export default class Spaeti {
   // EVENT-CHECKING
 
 
-  _checkForSlideChangeEndEvent() {
-    if (this._private.previousSlideIndex >= 0) {
-      let event = new Event(events.slideChangeEnd);
+  _checkForBounceStart() {
+    this._forXY((xy) => {
+      this._checkForBounceStartOnAxis(xy);
+    });
+  }
 
-      event.data = {
+
+  _checkForBounceStartOnAxis(axis) {
+    if (!this._state.isTouchActive && !this._private.isBounceOnAxis[axis]) {
+      let targetPositionOnAxis = this._getClosestBounceTargetOnAxis(axis);
+
+      if (targetPositionOnAxis !== this._private.moveable[axis]) {
+        let startPosition = {
+            x: this._private.moveable.x,
+            y: this._private.moveable.y
+          },
+          targetPosition = {
+            x: this._private.moveable.x,
+            y: this._private.moveable.y
+          };
+        targetPosition[axis] = targetPositionOnAxis;
+
+        this.bounce.bounceToTarget(startPosition, targetPosition);
+      }
+    }
+  }
+
+
+  _checkForPositionStable() {
+
+  }
+
+
+  _checkForSlideChangeEnd() {
+    if (this._private.previousSlideIndex >= 0) {
+      this.dispatchEventWithData(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
-      };
+      });
+      // TODO remove
+      // let event = new Event(events.slideChangeEnd);
+      // event.data = {
+      //   previousIndex: this._private.previousSlideIndex,
+      //   currentIndex: this._private.currentSlideIndex
+      // };
+      // this.dispatchEvent(event);
 
-      this.dispatchEvent(event);
       this._private.previousSlideIndex = -1;
     }
+  }
+
+
+  // HELPERS
+
+
+  // returns the closest bounce-to target on the given axis
+  _getClosestBounceTargetOnAxis(axis) {
+    let bounceTarget = this._private.moveable[axis];
+
+    // check the outer boundaries of the moveable
+    if (this._private.moveable[axis] > this._private.boundaries[axis].axisStart) {
+      bounceTarget = this._private.boundaries[axis].axisStart;
+    }
+    else if (this._private.moveable[axis] < this._private.boundaries[axis].axisEnd) {
+      bounceTarget = this._private.boundaries[axis].axisEnd;
+    }
+    // check the inner boundaries of the current moveable; only applies to x-axis
+    else if (axis === 'x') {
+      let targetLeft = this._private.currentSlideIndex * -this._private.container.width,
+        targetRight = targetLeft - this._private.container.width;
+
+      if (Math.abs(this._private.moveable[axis] - targetLeft) < this._private.container.width / 2) {
+        bounceTarget = targetLeft;
+      }
+      else {
+        bounceTarget = targetRight;
+      }
+    }
+
+    return bounceTarget;
   }
 
 
