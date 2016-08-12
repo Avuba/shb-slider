@@ -112,18 +112,69 @@ export default class Spaeti {
   // PUBLIC
 
 
-  refresh() {
+  refresh(config) {
+    if (config) fUtils.mergeDeep(this._config, config);
 
+    this._calculateParams();
+    this._setSlideDimensions();
+    this._resetSlidePositions();
+
+    requestAnimationFrame(() => {
+      this._updateSlidePositions();
+    });
   }
 
 
   destroy() {
+    this._unsubscribeFromEvents();
+
     this.touchToPush.destroy();
+
+    this._config.container = null;
+    this._config.slides = null;
+  }
+
+
+  scrollToSlide(slideIndex, shouldAnimate, animateTime) {
+    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.moveable.y, shouldAnimate, animateTime);
+  }
+
+
+  scrollToPosition(x, y, shouldAnimate, animateTime) {
+    let position = { x: x, y: y },
+      validPosition = { x: 0, y: 0 };
+
+    this._forXY((xy) => {
+      validPosition[xy] = position[xy];
+
+      // check if coordinates are within bounds, constrain them otherwise
+      if (validPosition[xy] > this._private.boundaries[xy].axisStart) {
+        validPosition[xy] = this._private.boundaries[xy].axisStart;
+      }
+      else if (validPosition[xy] < this._private.boundaries[xy].axisEnd) {
+        validPosition[xy] = this._private.boundaries[xy].axisEnd;
+      }
+    });
+
+    if (shouldAnimate === true) {
+      this._private.bounce.isAnimatedScroll = true;
+      this._forXY((xy) => {
+        this._startBounceOnAxis(xy, validPosition[xy], animateTime);
+      });
+    }
+    else {
+      this._updateCoords(validPosition);
+    }
   }
 
 
   freezeScroll(shouldFreeze) {
     this.touchToPush.setEnabled(!shouldFreeze);
+  }
+
+
+  getBoundaries() {
+    return fUtils.cloneDeep(this._private.boundaries);
   }
 
 
