@@ -11,4 +11,5 @@ webpack.config.babel.js
 # directories
 # ignored by default: node_modules
 */
+!src/
 !dist/
