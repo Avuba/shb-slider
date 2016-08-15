@@ -1,6 +1,6 @@
+import { default as Kotti } from '../node_modules/kotti/dist/Kotti.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
-import { default as TouchToPush } from './TouchToPush.js';
 import { default as Bounce } from './Bounce.js';
 
 let defaults = {
@@ -91,7 +91,7 @@ export default class Spaeti {
 
     if (config) fUtils.mergeDeep(this._config, config);
 
-    this.touchToPush = new TouchToPush(this._config);
+    this.kotti = new Kotti(this._config);
     this.bounce = new Bounce(this._config);
 
     this.events = events;
@@ -134,7 +134,7 @@ export default class Spaeti {
   destroy() {
     this._unsubscribeFromEvents();
 
-    this.touchToPush.destroy();
+    this.kotti.destroy();
 
     this._config.container = null;
     this._config.slides = null;
@@ -173,7 +173,7 @@ export default class Spaeti {
 
 
   freezeScroll(shouldFreeze) {
-    this.touchToPush.setEnabled(!shouldFreeze);
+    this.kotti.setEnabled(!shouldFreeze);
   }
 
 
@@ -186,10 +186,10 @@ export default class Spaeti {
 
 
   _subscribeToEvents() {
-    this.touchToPush.addEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
-    this.touchToPush.addEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
-    this.touchToPush.addEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
-    this.touchToPush.addEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
+    this.kotti.addEventListener(this.kotti.events.touchStart, this._handleTouchStart.bind(this));
+    this.kotti.addEventListener(this.kotti.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.kotti.addEventListener(this.kotti.events.pushBy, this._handlePushBy.bind(this));
+    this.kotti.addEventListener(this.kotti.events.momentum, this._handleMomentum.bind(this));
 
     this.bounce.addEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
     this.bounce.addEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
@@ -198,10 +198,10 @@ export default class Spaeti {
 
 
   _unsubscribeFromEvents() {
-    this.touchToPush.removeEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
-    this.touchToPush.removeEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
-    this.touchToPush.removeEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
-    this.touchToPush.removeEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
+    this.kotti.removeEventListener(this.kotti.events.touchStart, this._handleTouchStart.bind(this));
+    this.kotti.removeEventListener(this.kotti.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.kotti.removeEventListener(this.kotti.events.pushBy, this._handlePushBy.bind(this));
+    this.kotti.removeEventListener(this.kotti.events.momentum, this._handleMomentum.bind(this));
 
     this.bounce.removeEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
     this.bounce.removeEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
