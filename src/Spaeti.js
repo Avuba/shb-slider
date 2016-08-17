@@ -147,12 +147,9 @@ export default class Spaeti {
 
 
   scrollToPosition(x, y, shouldAnimate, animateTime) {
-    let position = { x: x, y: y },
-      validPosition = { x: 0, y: 0 };
+    let validPosition = { x: x, y: y };
 
     this._forXY((xy) => {
-      validPosition[xy] = position[xy];
-
       // check if coordinates are within bounds, constrain them otherwise
       if (validPosition[xy] > this._private.boundaries[xy].axisStart) {
         validPosition[xy] = this._private.boundaries[xy].axisStart;
@@ -167,6 +164,12 @@ export default class Spaeti {
       this.bounce.bounceToTarget(startPosition, validPosition, animateTime);
     }
     else {
+      // if we suddenly "jump" over too many slides, our current slide will remain in its current
+      // visible position, so we need to push it out; the "current" index is copied because the
+      // actual index may have changed when the RAF code gets executed
+      if (Math.abs(validPosition.x - this._private.moveable.x) >= this._private.container.width) {
+        this._hideSlide(this._private.currentSlideIndex);
+      }
       this._updateCoords(validPosition);
     }
   }
@@ -425,6 +428,13 @@ export default class Spaeti {
       requestAnimationFrame(() => {
         moveable.style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
       });
+    });
+  }
+
+
+  _hideSlide(slideIndex) {
+    requestAnimationFrame(() => {
+      this._config.slides[slideIndex].style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
     });
   }
 
