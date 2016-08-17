@@ -223,10 +223,8 @@ export default class Spaeti {
   _handleTouchEnd() {
     this._state.isTouchActive = false;
     this._checkForBounceStart();
-    if (!this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.Y) {
-      this._checkForSlideChangeEnd();
-      this._checkForPositionStable();
-    }
+    this._checkForSlideChangeEnd();
+    this._checkForPositionStable();
   }
 
 
@@ -247,6 +245,7 @@ export default class Spaeti {
 
   _handleBounceEndOnAxis(event) {
     this._private.isBounceOnAxis[event.data.axis] = false;
+    this._checkForSlideChangeEnd();
     this._checkForPositionStable();
   }
 
@@ -532,7 +531,7 @@ export default class Spaeti {
 
 
   _checkForSlideChangeEnd() {
-    if (this._private.previousSlideIndex >= 0) {
+    if (!this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.y && this._private.previousSlideIndex >= 0) {
       this.dispatchEventWithData(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
