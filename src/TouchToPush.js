@@ -153,9 +153,10 @@ export default class TouchToPush {
 
 
   _onTouchStart(event) {
+    console.log("START CONTAINER");
     if (!this._private.isEnabled) return;
 
-    event.preventDefault();
+    //event.preventDefault();
     this._state.isTouchActive = true;
     this.dispatchEvent(new Event(events.touchStart));
 
@@ -183,9 +184,10 @@ export default class TouchToPush {
 
 
   _onTouchMove(event) {
+    console.log("MOVE  CONTAINER");
     if (!this._private.isEnabled) return;
 
-    event.preventDefault();
+    //event.preventDefault();
 
     if (this._private.ignoreMovements) return;
 
@@ -291,8 +293,9 @@ export default class TouchToPush {
 
 
   _onTouchEnd(event) {
+    console.log("END   CONTAINER");
     if (!this._private.isEnabled) return;
-    event.preventDefault();
+    //event.preventDefault();
 
     // if another finger is still touching the target, we start a new path
     // instead of ending the touch sequence
@@ -353,7 +356,7 @@ export default class TouchToPush {
 
   _onTouchCancel(event) {
     if (!this._private.isEnabled) return;
-    event.preventDefault();
+    //event.preventDefault();
 
     this._state.isTouchActive = false;
   }
