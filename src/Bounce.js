@@ -17,7 +17,7 @@ let defaults = {
     animateTime: { x: 0, y: 0 },
     startTime: { x: 0, y: 0 }
   }
-}
+};
 
 
 let events = {
@@ -53,11 +53,13 @@ export default class Bounce {
     });
   }
 
+
   bounceToTargetOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime) {
     if (this._private.axis.includes(axis)) {
       this._startBounceOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime);
     }
   }
+
 
   stop() {
     this._stopBounce();
