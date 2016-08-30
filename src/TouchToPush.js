@@ -184,7 +184,6 @@ export default class TouchToPush {
 
   _onTouchMove(event) {
     if (!this._private.isEnabled) return;
-
     event.preventDefault();
 
     if (this._private.ignoreMovements) return;
