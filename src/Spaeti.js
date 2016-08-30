@@ -3,6 +3,7 @@ import { default as utils } from './utils.js';
 import { default as TouchToPush } from './TouchToPush.js';
 import { default as Bounce } from './Bounce.js';
 
+
 let defaults = {
   config: {
     // main container for defining the boundaries of the scrollable area and
@@ -75,6 +76,7 @@ let defaults = {
   }
 };
 
+
 let events = {
   positionChanged: 'positionChanged',
   positionStable: 'positionStable',
@@ -82,6 +84,7 @@ let events = {
   slideChangeStart: 'slideChangeStart',
   slideChangeEnd: 'slideChangeEnd'
 };
+
 
 export default class Spaeti {
   constructor(config) {
@@ -256,6 +259,7 @@ export default class Spaeti {
   _handleBounceToPosition(event) {
     this._updateCoords(event.data);
   }
+
 
   // POSITION AND MOVEMENT
 
@@ -503,7 +507,7 @@ export default class Spaeti {
   }
 
 
-  // CONDITION-CHECKING
+  // CONDITION CHECKING
 
 
   _checkForBounceStart() {
