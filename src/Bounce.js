@@ -75,9 +75,7 @@ export default class Bounce {
   _startBounceOnAxis(axis, startPositionPx, targetPositionPx, animateTime) {
     cancelAnimationFrame(this._private.currentFrame);
 
-    if (!this._private.isActive.x && !this._private.isActive.y) {
-      this.dispatchEvent(new Event(events.bounceStart));
-    }
+    let isBounceStart = !this._private.isActive.x && !this._private.isActive.y;
 
     this._private.isActive[axis] = true;
     this._private.startPosition[axis] = startPositionPx;
@@ -86,6 +84,7 @@ export default class Bounce {
     this._private.startTime[axis] = Date.now();
     this._private.animateTime[axis] = animateTime > 0 ? animateTime : this._config.bounceTime;
 
+    if (isBounceStart) this.dispatchEvent(new Event(events.bounceStart));
     this.dispatchEvent(new Event(events.bounceStartOnAxis), { axis: axis });
 
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);

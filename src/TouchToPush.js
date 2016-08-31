@@ -191,10 +191,10 @@ export default class TouchToPush {
 
   _onTouchStart(event) {
     if (!this._private.isEnabled) return;
-    event.preventDefault();
 
+    event.preventDefault();
     this._state.isTouchActive = true;
-    this.sharedScope.publish(topics.touchstart, event);
+    this.dispatchEvent(new Event(events.touchStart));
 
     // in case more than one finger is active, we assume that the necessary logic for checking if
     // the movements should be ignored has already happened

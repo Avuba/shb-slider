@@ -86,15 +86,6 @@ let events = {
 };
 
 
-let events = {
-  positionChanged: 'positionChanged',
-  positionStable: 'positionStable',
-  slideChange: 'slideChange',
-  slideChangeStart: 'slideChangeStart',
-  slideChangeEnd: 'slideChangeEnd'
-};
-
-
 export default class Spaeti {
   constructor(config) {
     this._config = fUtils.cloneDeep(defaults.config);
@@ -537,8 +528,8 @@ export default class Spaeti {
 
   _checkForPositionStable() {
     if (!this._state.isTouchActive
-      && !this._private.isBouncingOnAxis.x
-      && !this._private.isBouncingOnAxis.y) {
+        && !this._private.isBouncingOnAxis.x
+        && !this._private.isBouncingOnAxis.y) {
       this.dispatchEvent(new Event(events.positionStable), {
         position: {
           x: this._private.moveable.x,
@@ -555,8 +546,8 @@ export default class Spaeti {
 
   _checkForSlideChangeEnd() {
     if (!this._private.isBouncingOnAxis.x
-      && !this._private.isBouncingOnAxis.y
-      && this._private.previousSlideIndex >= 0) {
+        && !this._private.isBouncingOnAxis.y
+        && this._private.previousSlideIndex >= 0) {
       this.dispatchEvent(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
