@@ -2,7 +2,7 @@ import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 
 
-const defaults = {
+let defaults = {
   config: {
     // main container for defining the boundaries of the scrollable area and
     // setting the event listeners. is expected to be a simple DOM node

@@ -63,9 +63,8 @@ _export.addEventTargetInterface = function(target) {
   };
 
   target.removeEventListener = (type, callback) => {
-    if (!(type in target.listeners)) {
-      return;
-    }
+    if (!(type in target.listeners)) return;
+
     let stack = target.listeners[type];
     for (let i = 0, l = stack.length; i < l; i++) {
       if (stack[i] === callback) {
