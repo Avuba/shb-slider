@@ -310,15 +310,12 @@ export default class Spaeti {
 
     // enough momentum on the x axis will trigger a slide transition, otherwise ignore. we only
     // care about momentum on the x axis, as the Spaeti will only move in this direction
-    console.log("momentum.x.pxPerFrame", momentum.x.pxPerFrame, this._config.minMomentumForTransition);
     if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) return;
-    console.log("On with it");
 
     // before calculating a target position, we also check if the we are in the first (or last)
     // slide and if the current slide is already bouncing from a transition in the same
     // direction as the momentum; so if the user's finger lifts when already transitioning to the
     // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
-    console.log("momentum.x.direction, this._private.currentSlideIndex, this._private.currentMoveablePositionX", momentum.x.direction, this._private.currentSlideIndex, this._private.currentMoveablePositionX);
     if (momentum.x.direction > 0
         && this._private.currentSlideIndex > 0
         && this._private.currentMoveablePositionX > 0) {
@@ -333,7 +330,6 @@ export default class Spaeti {
     if (targetPositionPx <= 0) {
       this.bounce.bounceToTargetOnAxis('x', this._private.moveable.x, targetPositionPx);
     }
-    else console.log("nope");
   }
 
 
