@@ -327,7 +327,7 @@ export default class Spaeti {
       targetPositionPx = (this._private.currentSlideIndex +1) * -this._private.container.width;
     }
 
-    if (targetPositionPx) {
+    if (targetPositionPx <= 0) {
       this.bounce.bounceToTargetOnAxis('x', this._private.moveable.x, targetPositionPx);
     }
   }
