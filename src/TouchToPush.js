@@ -285,7 +285,7 @@ export default class TouchToPush {
       }
     }
 
-    this.dispatchEventWithData(new Event(events.pushBy), pushBy);
+    this.dispatchEvent(new Event(events.pushBy), pushBy);
   }
 
 
@@ -346,7 +346,7 @@ export default class TouchToPush {
       momentum[xy].pxPerFrame = avgPxPerFrame;
     });
 
-    this.dispatchEventWithData(new Event(events.momentum), momentum);
+    this.dispatchEvent(new Event(events.momentum), momentum);
   }
 
 

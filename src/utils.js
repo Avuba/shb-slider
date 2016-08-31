@@ -75,36 +75,18 @@ _export.addEventTargetInterface = function(target) {
     }
   };
 
-  target.dispatchEvent = (event) => {
+  target.dispatchEvent = (event, data) => {
     if (!(event.type in target.listeners)) {
       return;
     }
+    if (data) event.data = data;
+
     let stack = target.listeners[event.type];
-    // TODO this doesn't work, event.target is protected; in any case, should be a DOM node
-    // event.target = target;
     for (let i = 0, l = stack.length; i < l; i++) {
       stack[i].call(target, event);
     }
   };
-
-  target.dispatchEventWithData = (event, data) => {
-    event.data = data;
-    target.dispatchEvent(event);
-  };
 };
 
-
-// TODO remove
-/**
- * adds EventTarget functionality to an object by "borrowing" the EventTarget
- * functionality of a DOMNode.
- */
-/*
-_export.addEventDispatcher = function(target, domNode) {
-  target.addEventListener = domNode.addEventListener.bind(domNode);
-  target.removeEventListener = domNode.removeEventListener.bind(domNode);
-  target.dispatchEvent = domNode.dispatchEvent.bind(domNode);
-};
-*/
 
 export default _export;
