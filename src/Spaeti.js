@@ -3,6 +3,7 @@ import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as Bounce } from './Bounce.js';
 
+
 let defaults = {
   config: {
     // main container for defining the boundaries of the scrollable area and
@@ -63,7 +64,7 @@ let defaults = {
         px: 0
       }
     },
-    isBounceOnAxis: { x: false, y: false },
+    isBouncingOnAxis: { x: false, y: false },
     axis: ['x'],
     currentSlideIndex: 0,
     previousSlideIndex: -1,
@@ -75,6 +76,7 @@ let defaults = {
   }
 };
 
+
 let events = {
   positionChanged: 'positionChanged',
   positionStable: 'positionStable',
@@ -82,6 +84,7 @@ let events = {
   slideChangeStart: 'slideChangeStart',
   slideChangeEnd: 'slideChangeEnd'
 };
+
 
 export default class Spaeti {
   constructor(config) {
@@ -98,14 +101,12 @@ export default class Spaeti {
     utils.addEventTargetInterface(this);
 
     this._calculateParams();
-    this._subscribeToEvents();
+    this._bindEvents();
 
     this._setupDomElements();
     this._resetSlidePositions();
 
-    requestAnimationFrame(() => {
-      this._updateSlidePositions();
-    });
+    requestAnimationFrame(this._updateSlidePositions.bind(this));
   }
 
 
@@ -125,15 +126,12 @@ export default class Spaeti {
     this._private.moveable.x *= this._private.container.width/previousWidth;
     this._private.moveable.y *= this._private.container.height/previousHeight;
 
-    requestAnimationFrame(() => {
-      this._updateSlidePositions();
-    });
+    requestAnimationFrame(this._updateSlidePositions);
   }
 
 
   destroy() {
-    this._unsubscribeFromEvents();
-
+    this._unbindEvents();
     this.kotti.destroy();
 
     this._config.container = null;
@@ -147,7 +145,7 @@ export default class Spaeti {
 
 
   scrollToPosition(x, y, shouldAnimate, animateTime) {
-    let validPosition = { x: x, y: y };
+    let validPosition = {x, y};
 
     this._forXY((xy) => {
       // check if coordinates are within bounds, constrain them otherwise
@@ -159,7 +157,7 @@ export default class Spaeti {
       }
     });
 
-    if (shouldAnimate === true) {
+    if (shouldAnimate) {
       let startPosition = { x: this._private.moveable.x, y: this._private.moveable.y };
       this.bounce.bounceToTarget(startPosition, validPosition, animateTime);
     }
@@ -188,27 +186,38 @@ export default class Spaeti {
   // LIFECYCLE
 
 
-  _subscribeToEvents() {
-    this.kotti.addEventListener(this.kotti.events.touchStart, this._handleTouchStart.bind(this));
-    this.kotti.addEventListener(this.kotti.events.touchEnd, this._handleTouchEnd.bind(this));
-    this.kotti.addEventListener(this.kotti.events.pushBy, this._handlePushBy.bind(this));
-    this.kotti.addEventListener(this.kotti.events.momentum, this._handleMomentum.bind(this));
+  _bindEvents() {
+    this._private.boundHandlersTouchToPush = {
+      touchstart: this._handleTouchStart.bind(this),
+      touchEnd: this._handleTouchEnd.bind(this),
+      pushBy: this._handlePushBy.bind(this),
+      momentum: this._handleMomentum.bind(this)
+    };
 
-    this.bounce.addEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
-    this.bounce.addEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
-    this.bounce.addEventListener(this.bounce.events.bounceToPosition, this._handleBounceToPosition.bind(this));
+    fUtils.forEach(this._private.boundHandlersTouchToPush, (handler, eventType) => {
+      this.touchToPush.addEventListener(this.touchToPush.events[eventType], handler);
+    });
+
+    this._private.boundHandlersBounce = {
+      bounceStartOnAxis: this._handleBounceStartOnAxis.bind(this),
+      bounceEndOnAxis: this._handleBounceEndOnAxis.bind(this),
+      bounceToPosition: this._handleBounceToPosition.bind(this)
+    };
+
+    fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
+      this.bounce.addEventListener(this.bounce.events[eventType], handler);
+    });
   }
 
 
-  _unsubscribeFromEvents() {
-    this.kotti.removeEventListener(this.kotti.events.touchStart, this._handleTouchStart.bind(this));
-    this.kotti.removeEventListener(this.kotti.events.touchEnd, this._handleTouchEnd.bind(this));
-    this.kotti.removeEventListener(this.kotti.events.pushBy, this._handlePushBy.bind(this));
-    this.kotti.removeEventListener(this.kotti.events.momentum, this._handleMomentum.bind(this));
+  _unbindEvents() {
+    fUtils.forEach(this._private.boundHandlersTouchToPush, (handler, eventType) => {
+      this.touchToPush.removeEventListener(this.touchToPush.events[eventType], handler);
+    });
 
-    this.bounce.removeEventListener(this.bounce.events.bounceStartOnAxis, this._handleBounceStartOnAxis.bind(this));
-    this.bounce.removeEventListener(this.bounce.events.bounceEndOnAxis, this._handleBounceEndOnAxis.bind(this));
-    this.bounce.removeEventListener(this.bounce.events.bounceToPosition, this._handleBounceToPosition.bind(this));
+    fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
+      this.bounce.removeEventListener(this.bounce.events[eventType], handler);
+    });
   }
 
 
@@ -217,7 +226,7 @@ export default class Spaeti {
 
   _handleTouchStart() {
     this._state.isTouchActive = true;
-    if (this._private.isBounceOnAxis.x || this._private.isBounceOnAxis.y) {
+    if (this._private.isBouncingOnAxis.x || this._private.isBouncingOnAxis.y) {
       this.bounce.stop();
     }
   }
@@ -231,23 +240,13 @@ export default class Spaeti {
   }
 
 
-  _handlePushBy(event) {
-    this._onPushBy(event.data);
-  }
-
-
-  _handleMomentum(event) {
-    this._onMomentum(event.data);
-  }
-
-
   _handleBounceStartOnAxis(event) {
-    this._private.isBounceOnAxis[event.data.axis] = true;
+    this._private.isBouncingOnAxis[event.data.axis] = true;
   }
 
 
   _handleBounceEndOnAxis(event) {
-    this._private.isBounceOnAxis[event.data.axis] = false;
+    this._private.isBouncingOnAxis[event.data.axis] = false;
     this._checkForSlideChangeEnd();
     this._checkForPositionStable();
   }
@@ -257,31 +256,10 @@ export default class Spaeti {
     this._updateCoords(event.data);
   }
 
-  // POSITION AND MOVEMENT
 
-
-  _calculateParams() {
-    this._private.container.width = this._config.container.clientWidth;
-    this._private.container.height = this._config.container.clientHeight;
-
-    // the virtual moveable is the width of the combined slides. we assume that each slide
-    // has the same width and height as the container
-    this._private.moveable.width = this._private.container.width * this._config.slides.length;
-    this._private.moveable.height = this._private.container.height;
-
-    // calculate the maximum and minimum coordinates for scrolling. these are used as boundaries for
-    // determining overscroll status, initiating bounce (if allowed); and also to determine bounce
-    // target position when overscrolling
-    this._forXY((xy) => {
-      let dimension = xy === 'x' ? 'width' : 'height';
-      this._private.boundaries[xy].axisStart = 0;
-      this._private.boundaries[xy].axisEnd = this._private.container[dimension] - this._private.moveable[dimension];
-    });
-  }
-
-
-  _onPushBy(pushBy) {
-    let newCoordinates = {
+  _handlePushBy(event) {
+    let pushBy = event.data,
+      newCoordinates = {
         x: this._private.moveable.x,
         y: this._private.moveable.y
       },
@@ -326,32 +304,55 @@ export default class Spaeti {
   }
 
 
-  _onMomentum(momentum) {
-    if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) {
-      return;
-    }
-    else {
-      let targetPositionPx;
+  _handleMomentum(event) {
+    let momentum = event.data,
+      targetPositionPx;
 
-      // before calculating a target position, we also check if the we are in the first (or last)
-      // slide and if the current slide is already bouncing from a transition in the same
-      // direction as the momentum; so if the user's finger lifts when already transitioning to the
-      // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
-      if (momentum.x.direction > 0
-          && this._private.currentSlideIndex > 0
-          && this._private.currentMoveablePositionX > 0) {
-        targetPositionPx = (this._private.currentSlideIndex -1) * -this._private.container.width;
-      }
-      else if (momentum.x.direction < 0
-          && this._private.currentSlideIndex < this._config.slides.length -1
-          && this._private.currentMoveablePositionX < 0) {
-        targetPositionPx = (this._private.currentSlideIndex +1) * -this._private.container.width;
-      }
+    // enough momentum on the x axis will trigger a slide transition, otherwise ignore. we only
+    // care about momentum on the x axis, as the Spaeti will only move in this direction
+    if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) return;
 
-      if (fUtils.is(targetPositionPx)) {
-        this.bounce.bounceToTargetOnAxis('x', this._private.moveable.x, targetPositionPx);
-      }
+    // before calculating a target position, we also check if the we are in the first (or last)
+    // slide and if the current slide is already bouncing from a transition in the same
+    // direction as the momentum; so if the user's finger lifts when already transitioning to the
+    // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
+    if (momentum.x.direction > 0
+        && this._private.currentSlideIndex > 0
+        && this._private.currentMoveablePositionX > 0) {
+      targetPositionPx = (this._private.currentSlideIndex -1) * -this._private.container.width;
     }
+    else if (momentum.x.direction < 0
+        && this._private.currentSlideIndex < this._config.slides.length -1
+        && this._private.currentMoveablePositionX < 0) {
+      targetPositionPx = (this._private.currentSlideIndex +1) * -this._private.container.width;
+    }
+
+    if (targetPositionPx) {
+      this.bounce.bounceToTargetOnAxis('x', this._private.moveable.x, targetPositionPx);
+    }
+  }
+
+
+  // POSITION AND MOVEMENT
+
+
+  _calculateParams() {
+    this._private.container.width = this._config.container.clientWidth;
+    this._private.container.height = this._config.container.clientHeight;
+
+    // the virtual moveable is the width of the combined slides. we assume that each slide
+    // has the same width and height as the container
+    this._private.moveable.width = this._private.container.width * this._config.slides.length;
+    this._private.moveable.height = this._private.container.height;
+
+    // calculate the maximum and minimum coordinates for scrolling. these are used as boundaries for
+    // determining overscroll status, initiating bounce (if allowed); and also to determine bounce
+    // target position when overscrolling
+    this._forXY((xy) => {
+      let dimension = xy === 'x' ? 'width' : 'height';
+      this._private.boundaries[xy].axisStart = 0;
+      this._private.boundaries[xy].axisEnd = this._private.container[dimension] - this._private.moveable[dimension];
+    });
   }
 
 
@@ -387,7 +388,7 @@ export default class Spaeti {
       this._private.moveable.y = newCoordinates.y;
       this._updateSlidePositions();
 
-      this.dispatchEventWithData(new Event(events.positionChanged), {
+      this.dispatchEvent(new Event(events.positionChanged), {
         position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
@@ -471,13 +472,13 @@ export default class Spaeti {
       this._private.currentSlideIndex = updatedSlideIndex;
 
       if (isSlideChangeStart) {
-        this.dispatchEventWithData(new Event(events.slideChangeStart), {
+        this.dispatchEvent(new Event(events.slideChangeStart), {
           previousIndex: this._private.previousSlideIndex,
           currentIndex: this._private.currentSlideIndex
         });
       }
 
-      this.dispatchEventWithData(new Event(events.slideChange), {
+      this.dispatchEvent(new Event(events.slideChange), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       });
@@ -503,7 +504,7 @@ export default class Spaeti {
   }
 
 
-  // CONDITION-CHECKING
+  // CONDITION CHECKING
 
 
   _checkForBounceStart() {
@@ -514,7 +515,7 @@ export default class Spaeti {
 
 
   _checkForBounceStartOnAxis(axis) {
-    if (!this._state.isTouchActive && !this._private.isBounceOnAxis[axis]) {
+    if (!this._state.isTouchActive && !this._private.isBouncingOnAxis[axis]) {
       let targetPositionOnAxis = this._getClosestBounceTargetOnAxis(axis);
 
       if (targetPositionOnAxis !== this._private.moveable[axis]) {
@@ -525,8 +526,10 @@ export default class Spaeti {
 
 
   _checkForPositionStable() {
-    if (!this._state.isTouchActive && !this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.y) {
-      this.dispatchEventWithData(new Event(events.positionStable), {
+    if (!this._state.isTouchActive
+        && !this._private.isBouncingOnAxis.x
+        && !this._private.isBouncingOnAxis.y) {
+      this.dispatchEvent(new Event(events.positionStable), {
         position: {
           x: this._private.moveable.x,
           y: this._private.moveable.y
@@ -541,8 +544,10 @@ export default class Spaeti {
 
 
   _checkForSlideChangeEnd() {
-    if (!this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.y && this._private.previousSlideIndex >= 0) {
-      this.dispatchEventWithData(new Event(events.slideChangeEnd), {
+    if (!this._private.isBouncingOnAxis.x
+        && !this._private.isBouncingOnAxis.y
+        && this._private.previousSlideIndex >= 0) {
+      this.dispatchEvent(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       });

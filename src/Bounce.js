@@ -17,7 +17,7 @@ let defaults = {
     animateTime: { x: 0, y: 0 },
     startTime: { x: 0, y: 0 }
   }
-}
+};
 
 
 let events = {
@@ -53,11 +53,11 @@ export default class Bounce {
     });
   }
 
+
   bounceToTargetOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime) {
-    if (this._private.axis.includes(axis)) {
-      this._startBounceOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime);
-    }
+    this._startBounceOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime);
   }
+
 
   stop() {
     this._stopBounce();
@@ -75,9 +75,7 @@ export default class Bounce {
   _startBounceOnAxis(axis, startPositionPx, targetPositionPx, animateTime) {
     cancelAnimationFrame(this._private.currentFrame);
 
-    if (!this._private.isActive.x && !this._private.isActive.y) {
-      this.dispatchEvent(new Event(events.bounceStart));
-    }
+    let isBounceStart = !this._private.isActive.x && !this._private.isActive.y;
 
     this._private.isActive[axis] = true;
     this._private.startPosition[axis] = startPositionPx;
@@ -86,7 +84,8 @@ export default class Bounce {
     this._private.startTime[axis] = Date.now();
     this._private.animateTime[axis] = animateTime > 0 ? animateTime : this._config.bounceTime;
 
-    this.dispatchEventWithData(new Event(events.bounceStartOnAxis), { axis: axis });
+    if (isBounceStart) this.dispatchEvent(new Event(events.bounceStart));
+    this.dispatchEvent(new Event(events.bounceStartOnAxis), { axis: axis });
 
     this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
   }
@@ -99,8 +98,8 @@ export default class Bounce {
 
         // CALCULATE NEW POSITION
 
-        // we test how much time has passed and not the position.
-        // testing the position doesn't make sense because:
+        // we test how much time has passed and not the position. testing the position doesn't make
+        // sense because:
         // a) exponential functions never really cross the axis;
         // b) some ease functions will cross the axes (spring-like effect).
         if (timePassed < this._private.animateTime[xy]) {
@@ -115,12 +114,12 @@ export default class Bounce {
           this._private.currentPosition[xy] = this._private.targetPosition[xy];
           this._private.isActive[xy] = false;
 
-          this.dispatchEventWithData(new Event(events.bounceEndOnAxis), { axis: xy });
+          this.dispatchEvent(new Event(events.bounceEndOnAxis), { axis: xy });
         }
       }
     });
 
-    this.dispatchEventWithData(new Event(events.bounceToPosition), this._private.currentPosition);
+    this.dispatchEvent(new Event(events.bounceToPosition), this._private.currentPosition);
 
     if (this._private.isActive.x || this._private.isActive.y) {
       this._private.currentFrame = requestAnimationFrame(this._private.boundBounce);
@@ -135,7 +134,7 @@ export default class Bounce {
     this._forXY((xy) => {
       if (this._private.isActive[xy]) {
         this._private.isActive[xy] = false;
-        this.dispatchEventWithData(new Event(events.bounceEndOnAxis), { axis: xy });
+        this.dispatchEvent(new Event(events.bounceEndOnAxis), { axis: xy });
       }
     });
 

@@ -1,6 +1,6 @@
 {
   "name": "spaeti",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "framework-independent swiper/slides JavaScript UI component",
   "scripts": {
     "build": "webpack --mode=build",
@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avuba/wegbier.git"
+    "url": "git+https://github.com/avuba/spaeti.git"
   },
   "author": "Avuba",
   "contributors": [
@@ -36,7 +36,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/avuba/wegbier/issues"
+    "url": "https://github.com/avuba/spaeti/issues"
   },
-  "homepage": "https://github.com/avuba/wegbier#readme"
+  "homepage": "https://github.com/avuba/spaeti#readme"
 }
