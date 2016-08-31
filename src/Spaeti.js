@@ -64,6 +64,7 @@ let defaults = {
       }
     },
     isBounceOnAxis: { x: false, y: false },
+    isMoving: false,
     axis: ['x'],
     currentSlideIndex: 0,
     previousSlideIndex: -1,
@@ -191,6 +192,7 @@ export default class Spaeti {
   _subscribeToEvents() {
     this.touchToPush.addEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
     this.touchToPush.addEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.touchToPush.addEventListener(this.touchToPush.events.touchIgnored, this._handleTouchIgnored.bind(this));
     this.touchToPush.addEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
     this.touchToPush.addEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
 
@@ -203,6 +205,7 @@ export default class Spaeti {
   _unsubscribeFromEvents() {
     this.touchToPush.removeEventListener(this.touchToPush.events.touchStart, this._handleTouchStart.bind(this));
     this.touchToPush.removeEventListener(this.touchToPush.events.touchEnd, this._handleTouchEnd.bind(this));
+    this.touchToPush.removeEventListener(this.touchToPush.events.touchIgnored, this._handleTouchIgnored.bind(this));
     this.touchToPush.removeEventListener(this.touchToPush.events.pushBy, this._handlePushBy.bind(this));
     this.touchToPush.removeEventListener(this.touchToPush.events.momentum, this._handleMomentum.bind(this));
 
@@ -224,9 +227,18 @@ export default class Spaeti {
 
 
   _handleTouchEnd() {
+    console.log("_handleTouchEnd()");
     this._state.isTouchActive = false;
     this._checkForBounceStart();
     this._checkForSlideChangeEnd();
+    this._checkForPositionStable();
+  }
+
+
+  _handleTouchIgnored() {
+    console.log("_handleTouchIgnored()");
+    this._state.isTouchActive = false;
+    this._checkForBounceStart();
     this._checkForPositionStable();
   }
 
@@ -281,6 +293,11 @@ export default class Spaeti {
 
 
   _onPushBy(pushBy) {
+    if (this._private.isMoving) {
+      console.log("stop events");
+      this.touchToPush.stopEvents(true);
+    }
+
     let newCoordinates = {
         x: this._private.moveable.x,
         y: this._private.moveable.y
@@ -383,6 +400,11 @@ export default class Spaeti {
     // APPLY NEW COORDINATES AND DISPATCH EVENT
 
     if (this._private.moveable.x !== newCoordinates.x || this._private.moveable.y !== newCoordinates.y) {
+      if (!this._private.isMoving) {
+        console.log("--- MOVING ...");
+        this._private.isMoving = true;
+      }
+
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
       this._updateSlidePositions();
@@ -526,6 +548,9 @@ export default class Spaeti {
 
   _checkForPositionStable() {
     if (!this._state.isTouchActive && !this._private.isBounceOnAxis.x && !this._private.isBounceOnAxis.y) {
+      this._private.isMoving = false;
+      console.log("--- NOT MOVING");
+      this.touchToPush.stopEvents(false);
       this.dispatchEventWithData(new Event(events.positionStable), {
         position: {
           x: this._private.moveable.x,

@@ -22,6 +22,15 @@ const defaults = {
     // are at the same spot and only the locked element should move
     lock: false,
 
+    // if it should also stop touchend events when scrolling in one direction.
+    // this will mess up things that depend on clicks (ionic on-tap, for instance)
+    // beause the listener will get an touchstart but not a touchend... so the next
+    // tap or click may not work
+    stopEndEventWhenLocked: false,
+
+    // preventing the default event can also prevent child ionic elems from scrolling
+    preventDefaultEvents: true,
+
     // don't trigger momentum scrolling in case the distance between touchstart
     // and touchEnd is less than minPxForMomentum
     minPxForMomentum: 3,
@@ -39,6 +48,8 @@ const defaults = {
     isEnabled: true,
     boundHandlers: {},
     ignoreMovements: false,
+    stopEvents: false,
+    clientStopEvents: false,
     moveCount: 0,
     startPoint: null,
     path: {
@@ -75,6 +86,7 @@ const events = {
   pushBy: 'pushBy',
   touchStart: 'touchStart',
   touchEnd: 'touchEnd',
+  touchIgnored: 'touchIgnored',
   momentum: 'momentum'
 };
 
@@ -102,6 +114,14 @@ export default class TouchToPush {
 
 
   // PUBLIC
+
+
+  stopEvents(shouldStop) {
+    if (shouldStop === false)
+      this._private.clientStopEvents = false;
+    else
+      this._private.clientStopEvents = true;
+  }
 
 
   setEnabled(shouldEnable) {
@@ -153,10 +173,14 @@ export default class TouchToPush {
 
 
   _onTouchStart(event) {
-    console.log("START CONTAINER");
+    //console.log("START CONTAINER");
     if (!this._private.isEnabled) return;
 
-    //event.preventDefault();
+    if (this._config.preventDefaultEvents)
+			event.preventDefault();
+    if (this._private.stopEvents || this._private.clientStopEvents)
+      utils.stopEvent(event);
+
     this._state.isTouchActive = true;
     this.dispatchEvent(new Event(events.touchStart));
 
@@ -164,6 +188,7 @@ export default class TouchToPush {
     this._private.startPoint = newTouchPoint;
     this._private.timestamps.start = this._private.timestamps.move = Date.now();
     this._private.ignoreMovements = false;
+    this._private.stopEvents = false;
     this._private.moveCount = 0;
 
     this._forXY((xy) => {
@@ -184,12 +209,14 @@ export default class TouchToPush {
 
 
   _onTouchMove(event) {
-    console.log("MOVE  CONTAINER");
+    //console.log("MOVE  CONTAINER");
     if (!this._private.isEnabled) return;
 
-    //event.preventDefault();
+    if (this._config.preventDefaultEvents)
+			event.preventDefault();
 
     if (this._private.ignoreMovements) return;
+    if (this._private.stopEvents || this._private.clientStopEvents) utils.stopEvent(event);
 
     let pushBy = {
         x: { direction: 0, px: 0 },
@@ -224,7 +251,7 @@ export default class TouchToPush {
         newDirection[xy] = relativeDelta < 0 ? -1 : 1;
       }
 
-      // PROCSS DIRECTION CHANGE
+      // PROCESS DIRECTION CHANGE
 
       // check if direction has changed and update the movement related
       // parameters if yes. prevDirection !== 0 helps avoiding changing the
@@ -284,18 +311,28 @@ export default class TouchToPush {
 
         // ignore all further events in case the movement of the finger has not
         // followed the locked direction
-        if (distanceOnOppositeAxis > distanceOnTargetAxis) this._private.ignoreMovements = true;
+        if (distanceOnOppositeAxis > distanceOnTargetAxis && !this._private.clientStopEvents)
+          this._private.ignoreMovements = true;
+        else
+          this._private.stopEvents = true;
       }
     }
 
     this.dispatchEventWithData(new Event(events.pushBy), pushBy);
+
+    if (this._private.ignoreMovements) {
+      //console.log("movements will be ignored");
+      this.dispatchEvent(new Event(events.touchIgnored));
+    }
   }
 
 
   _onTouchEnd(event) {
-    console.log("END   CONTAINER");
+    //console.log("END   CONTAINER");
     if (!this._private.isEnabled) return;
-    //event.preventDefault();
+
+    if (this._config.preventDefaultEvents)
+			event.preventDefault();
 
     // if another finger is still touching the target, we start a new path
     // instead of ending the touch sequence
@@ -314,6 +351,10 @@ export default class TouchToPush {
 
     if (!this._config.momentum) return;
     if (this._private.ignoreMovements) return;
+    if (this._config.stopEndEventWhenLocked && (this._private.stopEvents || this._private.clientStopEvents)) {
+	    //console.log('Stopping event', event.type);
+	    utils.stopEvent(event);
+	  }
     if (Date.now() - this._private.timestamps.move > this._config.maxTimeDiffForMomentum) return;
 
     let momentum = {
@@ -356,7 +397,9 @@ export default class TouchToPush {
 
   _onTouchCancel(event) {
     if (!this._private.isEnabled) return;
-    //event.preventDefault();
+
+    if (this._config.preventDefaultEvents)
+			event.preventDefault();
 
     this._state.isTouchActive = false;
   }
