@@ -86,6 +86,15 @@ let events = {
 };
 
 
+let events = {
+  positionChanged: 'positionChanged',
+  positionStable: 'positionStable',
+  slideChange: 'slideChange',
+  slideChangeStart: 'slideChangeStart',
+  slideChangeEnd: 'slideChangeEnd'
+};
+
+
 export default class Spaeti {
   constructor(config) {
     this._config = fUtils.cloneDeep(defaults.config);

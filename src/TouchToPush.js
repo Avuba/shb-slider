@@ -62,7 +62,8 @@ let defaults = {
       x: 0,
       y: 0
     },
-    axis: ['x', 'y']
+    axis: ['x', 'y'],
+    activeFinger: 0
   },
 
   state: {
@@ -152,33 +153,57 @@ export default class TouchToPush {
   }
 
 
+  _checkForSetNewStartParams(event, forceNewFinger) {
+    // event.changedTouches always contains only one finger - the finger which moved last and
+    // therefore triggered the touchstart/move event. we store the identifier and use it for
+    // getting the active finger index inside event.touches (which can contain multiple fingers)
+    let identifier = event.changedTouches[0].identifier,
+      newActiveFinger = 0;
+
+    fUtils.forEach(event.touches, (touch, index) => {
+      if (touch.identifier === identifier) newActiveFinger = index;
+    });
+
+    if (this._private.activeFinger !== newActiveFinger || forceNewFinger) {
+      this._private.activeFinger = newActiveFinger;
+
+      let newTouchPoint = this._eventToPoint(event);
+      this._private.startPoint = newTouchPoint;
+      this._private.timestamps.start = this._private.timestamps.move = Date.now();
+
+      this._forXY((xy) => {
+
+        // RESET PREVIOUS TOUCH FLOW
+
+        this._private.path[xy].length = 0;
+        this._private.speed[xy].length = 0;
+
+        this._private.direction[xy] = 0;
+        this._private.prevDirection[xy] = 0;
+
+        // START NEW TOUCH FLOW
+
+        this._private.path[xy].push(newTouchPoint[xy]);
+      });
+    }
+  }
+
+
   _onTouchStart(event) {
     if (!this._private.isEnabled) return;
-
     event.preventDefault();
+
     this._state.isTouchActive = true;
-    this.dispatchEvent(new Event(events.touchStart));
+    this.sharedScope.publish(topics.touchstart, event);
 
-    let newTouchPoint = this._eventToPoint(event);
-    this._private.startPoint = newTouchPoint;
-    this._private.timestamps.start = this._private.timestamps.move = Date.now();
-    this._private.ignoreMovements = false;
-    this._private.moveCount = 0;
+    // in case more than one finger is active, we assume that the necessary logic for checking if
+    // the movements should be ignored has already happened
+    if (event.touches.length < 2) {
+      this._private.ignoreMovements = false;
+      this._private.moveCount = 0;
+    }
 
-    this._forXY((xy) => {
-
-      // RESET PREVIOUS TOUCH FLOW
-
-      this._private.path[xy].length = 0;
-      this._private.speed[xy].length = 0;
-
-      this._private.direction[xy] = 0;
-      this._private.prevDirection[xy] = 0;
-
-      // START NEW TOUCH FLOW
-
-      this._private.path[xy].push(newTouchPoint[xy]);
-    });
+    this._checkForSetNewStartParams(event, true);
   }
 
 
@@ -187,6 +212,10 @@ export default class TouchToPush {
     event.preventDefault();
 
     if (this._private.ignoreMovements) return;
+
+    // we need to re-create all stored touch properties in case the finger changed. this function
+    // checks if a new finger is active
+    this._checkForSetNewStartParams(event);
 
     let pushBy = {
         x: { direction: 0, px: 0 },
@@ -201,7 +230,7 @@ export default class TouchToPush {
 
       // CALCULATE AND STORE PARAMTERS FOR FURTHER PROCESSING
 
-      let relativeDelta = newTouchPoint[xy] - fUtils.lastPosition(this._private.path[xy]);
+      let relativeDelta = this._private.path[xy].length ? newTouchPoint[xy] - fUtils.lastPosition(this._private.path[xy]) : 0;
       this._private.path[xy].push(newTouchPoint[xy]);
       this._private.speed[xy].push({
         px: Math.abs(relativeDelta),
@@ -293,17 +322,13 @@ export default class TouchToPush {
     if (!this._private.isEnabled) return;
     event.preventDefault();
 
-    // if another finger is still touching the target, we start a new path
-    // instead of ending the touch sequence
-    if (event.targetTouches.length > 0) {
-      let newTouchPoint = this._eventToPoint(event);
-      this._forXY((xy) => {
-        this._private.path[xy].length = 0;
-        this._private.speed[xy].length = 0;
-        this._private.path[xy].push(newTouchPoint[xy]);
-      });
-      return;
-    }
+    // this forces the re-creation of all touch properties when calling _checkForSetNewStartParams()
+    // on line 198 inside _onTouchMove()
+    this._private.activeFinger = -1;
+
+    // we don't trigger velocity scrolling or any other touchend interaction till we're sure that
+    // there are no more active fingers
+    if (event.touches.length > 0) return;
 
     this._state.isTouchActive = false;
     this.dispatchEvent(new Event(events.touchEnd));
@@ -368,8 +393,8 @@ export default class TouchToPush {
 
   _eventToPoint(event) {
     return {
-      x: event.touches[0].pageX,
-      y: event.touches[0].pageY
-    };
+      x: event.touches[this._private.activeFinger].pageX,
+      y: event.touches[this._private.activeFinger].pageY
+    }
   }
 }
