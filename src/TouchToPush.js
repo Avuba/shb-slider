@@ -23,14 +23,14 @@ let defaults = {
     lock: false,
 
     // don't trigger momentum scrolling in case the distance between touchstart
-    // and touchend is less than minPxForMomentum
+    // and touchEnd is less than minPxForMomentum
     minPxForMomentum: 3,
 
     // maximal number of points we check for calculating the speed of momentum
-    // on touchend
+    // on touchEnd
     maxPointsForMomentum: 3,
 
-    // if the time between the last touchmove event and touchend is larger than
+    // if the time between the last touchmove event and touchEnd is larger than
     // this value, we don't start the momentum
     maxTimeDiffForMomentum: 66
   },
@@ -72,17 +72,17 @@ let defaults = {
 };
 
 
-let topics = {
-  pushBy: 'touchToPush:pushBy',
-  touchstart: 'touchToPush:touchstart',
-  touchend: 'touchToPush:touchend',
-  finishTouchWithMomentum: 'touchToPush:finishTouchWithMomentum'
+const events = {
+  pushBy: 'pushBy',
+  touchStart: 'touchStart',
+  touchEnd: 'touchEnd',
+  momentum: 'momentum'
 };
 
 
 export default class TouchToPush {
-  constructor(config, sharedScope) {
-    this.sharedScope = sharedScope;
+  constructor(config) {
+    this.events = events;
 
     this._config = fUtils.cloneDeep(defaults.config);
     this._private = fUtils.cloneDeep(defaults.private);
@@ -96,33 +96,16 @@ export default class TouchToPush {
     // lock forces capture to be true
     if (this._config.lock) this._config.capture = true;
 
-    this._subscribePubsubs();
+    utils.addEventTargetInterface(this);
+
     this._bindEvents();
   }
 
 
-  // LIFECYCLE
+  // PUBLIC
 
 
-  _subscribePubsubs() {
-    this.sharedScope.subscribe('main:destroy', this._onDestroy.bind(this));
-
-    this.sharedScope.subscribe('spaeti:freezeScroll', (shouldFreeze) => {
-        this._setEnabled(!shouldFreeze);
-    });
-  }
-
-
-  _onDestroy() {
-    this._unbindEvents();
-    this._config.container = null;
-  }
-
-
-  // STATE AND BEHAVIOUR
-
-
-  _setEnabled(shouldEnable) {
+  setEnabled(shouldEnable) {
     this._private.isEnabled = shouldEnable;
 
     if (!this._private.isEnabled && this._state.isTouchActive) {
@@ -133,10 +116,16 @@ export default class TouchToPush {
 
       this._state.isTouchActive = false;
 
-      // publish a touchend event so that subscribers aren't left under the impression that there is
+      // publish a touchEnd event so that subscribers aren't left under the impression that there is
       // still a meaningful touch hanging
-      this.sharedScope.publish(topics.touchend);
+      this.dispatchEvent(new Event(events.touchEnd));
     }
+  }
+
+
+  destroy() {
+    this._unbindEvents();
+    this._config.container = null;
   }
 
 
@@ -202,10 +191,10 @@ export default class TouchToPush {
 
   _onTouchStart(event) {
     if (!this._private.isEnabled) return;
-    event.preventDefault();
 
+    event.preventDefault();
     this._state.isTouchActive = true;
-    this.sharedScope.publish(topics.touchstart, event);
+    this.dispatchEvent(new Event(events.touchStart));
 
     // in case more than one finger is active, we assume that the necessary logic for checking if
     // the movements should be ignored has already happened
@@ -317,7 +306,7 @@ export default class TouchToPush {
         let targetAxis = this._private.axis[0],
           oppositeAxis = targetAxis === 'x' ? 'y' : 'x',
           distanceOnTargetAxis = Math.abs(newTouchPoint[targetAxis] - this._private.startPoint[targetAxis]),
-          distanceOnOppositeAxis =  Math.abs(newTouchPoint[oppositeAxis] - this._private.startPoint[oppositeAxis]);
+          distanceOnOppositeAxis = Math.abs(newTouchPoint[oppositeAxis] - this._private.startPoint[oppositeAxis]);
 
         // ignore all further events in case the movement of the finger has not
         // followed the locked direction
@@ -325,7 +314,7 @@ export default class TouchToPush {
       }
     }
 
-    this.sharedScope.publish(topics.pushBy, pushBy);
+    this.dispatchEvent(new Event(events.pushBy), pushBy);
   }
 
 
@@ -342,7 +331,7 @@ export default class TouchToPush {
     if (event.touches.length > 0) return;
 
     this._state.isTouchActive = false;
-    this.sharedScope.publish(topics.touchend, event);
+    this.dispatchEvent(new Event(events.touchEnd));
 
     if (!this._config.momentum) return;
     if (this._private.ignoreMovements) return;
@@ -372,7 +361,7 @@ export default class TouchToPush {
 
       // calculate the average values by iterating of the 'speedPoints' array
       // within the range of 'pointsToConsider'
-      for (var i = speedPoints.length - 1; i >= speedPoints.length - pointsToConsider; i--) {
+      for (let i = speedPoints.length - 1; i >= speedPoints.length - pointsToConsider; i--) {
         avgPxPerFrame = avgPxPerFrame + (speedPoints[i].px / pointsToConsider);
       }
 
@@ -382,7 +371,7 @@ export default class TouchToPush {
       momentum[xy].pxPerFrame = avgPxPerFrame;
     });
 
-    this.sharedScope.publish(topics.finishTouchWithMomentum, momentum);
+    this.dispatchEvent(new Event(events.momentum), momentum);
   }
 
 
@@ -408,4 +397,4 @@ export default class TouchToPush {
       y: event.touches[this._private.activeFinger].pageY
     }
   }
-};
+}

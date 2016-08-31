@@ -44,41 +44,46 @@ _export.easeLinear = function(t, b, c, d) {
   * @param {Number} c : the change in value
   * @param {Number} d : the duration time
   */
-_export.easeLinear = function(t, b, c, d) {
-  return c*t/d + b;
-};
-
-
-/**
-  * @param {Number} t : the current time
-  * @param {Number} b : the start value
-  * @param {Number} c : the change in value
-  * @param {Number} d : the duration time
-  */
-_export.easeInCubic = function(t, b, c, d) {
-   return c*(t/=d)*t*t + b;
-};
-
-
-/**
-  * @param {Number} t : the current time
-  * @param {Number} b : the start value
-  * @param {Number} c : the change in value
-  * @param {Number} d : the duration time
-  */
 _export.easeOutCubic = function (t, b, c, d) {
   return c*((t=t/d-1)*t*t + 1) + b;
 };
 
 
 /**
- * adds EventTarget functionality to an object by "borrowing" the EventTarget
- * functionality of a DOMNode.
+ * adds the EventTarget interface to an object
  */
-_export.addEventDispatcher = function(target, domNode) {
-  target.addEventListener = domNode.addEventListener.bind(domNode);
-  target.removeEventListener = domNode.removeEventListener.bind(domNode);
-  target.dispatchEvent = domNode.dispatchEvent.bind(domNode);
+_export.addEventTargetInterface = function(target) {
+  target.listeners = {};
+
+  target.addEventListener = (type, callback) => {
+    if (!(type in target.listeners)) {
+      target.listeners[type] = [];
+    }
+    target.listeners[type].push(callback);
+  };
+
+  target.removeEventListener = (type, callback) => {
+    if (!(type in target.listeners)) return;
+
+    let stack = target.listeners[type];
+    for (let i = 0, l = stack.length; i < l; i++) {
+      if (stack[i] === callback) {
+        stack.splice(i, 1);
+        return target.removeEventListener(type, callback);
+      }
+    }
+  };
+
+  target.dispatchEvent = (event, data) => {
+    if (!(event.type in target.listeners)) return;
+    if (data) event.data = data;
+
+    let stack = target.listeners[event.type];
+    for (let i = 0, l = stack.length; i < l; i++) {
+      stack[i].call(target, event);
+    }
+  };
 };
+
 
 export default _export;
