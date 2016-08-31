@@ -132,7 +132,6 @@ export default class Spaeti {
 
   destroy() {
     this._unbindEvents();
-
     this.touchToPush.destroy();
 
     this._config.container = null;
