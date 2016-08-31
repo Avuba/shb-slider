@@ -1,6 +1,6 @@
+import { default as Kotti } from '../node_modules/kotti/dist/Kotti.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
-import { default as TouchToPush } from './TouchToPush.js';
 import { default as Bounce } from './Bounce.js';
 
 
@@ -94,7 +94,7 @@ export default class Spaeti {
 
     if (config) fUtils.mergeDeep(this._config, config);
 
-    this.touchToPush = new TouchToPush(this._config);
+    this.kotti = new Kotti(this._config);
     this.bounce = new Bounce(this._config);
 
     this.events = events;
@@ -132,7 +132,7 @@ export default class Spaeti {
 
   destroy() {
     this._unbindEvents();
-    this.touchToPush.destroy();
+    this.kotti.destroy();
 
     this._config.container = null;
     this._config.slides = null;
@@ -174,7 +174,7 @@ export default class Spaeti {
 
 
   freezeScroll(shouldFreeze) {
-    this.touchToPush.setEnabled(!shouldFreeze);
+    this.kotti.setEnabled(!shouldFreeze);
   }
 
 
@@ -187,15 +187,15 @@ export default class Spaeti {
 
 
   _bindEvents() {
-    this._private.boundHandlersTouchToPush = {
+    this._private.boundHandlersKotti = {
       touchstart: this._handleTouchStart.bind(this),
       touchEnd: this._handleTouchEnd.bind(this),
       pushBy: this._handlePushBy.bind(this),
       momentum: this._handleMomentum.bind(this)
     };
 
-    fUtils.forEach(this._private.boundHandlersTouchToPush, (handler, eventType) => {
-      this.touchToPush.addEventListener(this.touchToPush.events[eventType], handler);
+    fUtils.forEach(this._private.boundHandlersKotti, (handler, eventType) => {
+      this.kotti.addEventListener(this.kotti.events[eventType], handler);
     });
 
     this._private.boundHandlersBounce = {
