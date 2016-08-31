@@ -187,15 +187,15 @@ export default class Spaeti {
 
 
   _bindEvents() {
-    this._private.boundHandlersTouchToPush = {
+    this._private.boundHandlersKotti = {
       touchstart: this._handleTouchStart.bind(this),
       touchEnd: this._handleTouchEnd.bind(this),
       pushBy: this._handlePushBy.bind(this),
       momentum: this._handleMomentum.bind(this)
     };
 
-    fUtils.forEach(this._private.boundHandlersTouchToPush, (handler, eventType) => {
-      this.touchToPush.addEventListener(this.touchToPush.events[eventType], handler);
+    fUtils.forEach(this._private.boundHandlersKotti, (handler, eventType) => {
+      this.kotti.addEventListener(this.kotti.events[eventType], handler);
     });
 
     this._private.boundHandlersBounce = {
