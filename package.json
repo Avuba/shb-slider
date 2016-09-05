@@ -1,13 +1,13 @@
 {
   "name": "spaeti",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "framework-independent swiper/slides JavaScript UI component",
   "scripts": {
     "build": "webpack --mode=build",
     "start": "webpack-dev-server --inline --mode=dev --host=0.0.0.0 --port=8080"
   },
   "dependencies": {
-    "kotti": "^0.0.7"
+    "kotti": "^0.0.8"
   },
   "devDependencies": {
     "babel": "^6.5.2",

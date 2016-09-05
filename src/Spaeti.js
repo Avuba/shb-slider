@@ -169,6 +169,17 @@ export default class Spaeti {
         this._hideSlide(this._private.currentSlideIndex);
       }
       this._updateCoords(validPosition);
+
+      // on animated scroll, events happen as result of the animation logic; on an instant scroll
+      // we need to trigger them here, as the transition is instant
+      let eventData = {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      };
+
+      this.dispatchEvent(new Event(events.slideChangeStart), eventData);
+      this.dispatchEvent(new Event(events.slideChange), eventData);
+      this.dispatchEvent(new Event(events.slideChangeEnd), eventData);
     }
   }
 
