@@ -124,7 +124,6 @@ export default class Spaeti {
 
 
   refresh(config) {
-    console.log("TDBG refresh");
     let previousWidth = this._private.container.width,
       previousHeight = this._private.container.height;
 
