@@ -222,8 +222,8 @@ export default class Spaeti {
 
 
   _unbindEvents() {
-    fUtils.forEach(this._private.boundHandlersTouchToPush, (handler, eventType) => {
-      this.touchToPush.removeEventListener(this.touchToPush.events[eventType], handler);
+    fUtils.forEach(this._private.boundHandlersKotti, (handler, eventType) => {
+      this.kotti.removeEventListener(this.kotti.events[eventType], handler);
     });
 
     fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
