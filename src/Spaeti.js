@@ -420,7 +420,7 @@ export default class Spaeti {
     if (this._private.moveable.x !== newCoordinates.x || this._private.moveable.y !== newCoordinates.y) {
       this._private.moveable.x = newCoordinates.x;
       this._private.moveable.y = newCoordinates.y;
-      this._updateSlidePositions();
+      requestAnimationFrame(this._private.boundUpdateSlidePositions);
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
