@@ -45,11 +45,11 @@ let defaults = {
     boundaries: {
       x: {
         axisStart: 0,
-        isAxisEnd: 0
+        axisEnd: 0
       },
       y: {
         axisStart: 0,
-        isAxisEnd: 0
+        axisEnd: 0
       }
     },
     overscroll: {
