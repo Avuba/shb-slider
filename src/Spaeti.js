@@ -2,6 +2,7 @@ import { default as Kotti } from '../node_modules/kotti/dist/Kotti.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as Bounce } from './Bounce.js';
+import { default as ResizeDebouncer } from './ResizeDebouncer.js';
 
 
 let defaults = {
@@ -27,7 +28,10 @@ let defaults = {
     bounceTime: 500,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
-    minMomentumForTransition: 5
+    minMomentumForTransition: 5,
+
+    // when set to true, listens to debounced window.resize events and calls refresh
+    refreshOnResize: true
   },
 
   private: {
@@ -68,7 +72,8 @@ let defaults = {
     axis: ['x'],
     currentSlideIndex: 0,
     previousSlideIndex: -1,
-    currentMoveablePositionX: 0
+    currentMoveablePositionX: 0,
+    boundUpdateSlidePositions: null
   },
 
   state: {
@@ -97,6 +102,10 @@ export default class Spaeti {
     this.kotti = new Kotti(this._config);
     this.bounce = new Bounce(this._config);
 
+    if (this._config.refreshOnResize) {
+      this.resizeDebouncer = new ResizeDebouncer();
+    }
+
     this.events = events;
     utils.addEventTargetInterface(this);
 
@@ -106,7 +115,8 @@ export default class Spaeti {
     this._setupDomElements();
     this._resetSlidePositions();
 
-    requestAnimationFrame(this._updateSlidePositions.bind(this));
+    this._private.boundUpdateSlidePositions = this._updateSlidePositions.bind(this);
+    requestAnimationFrame(this._private.boundUpdateSlidePositions);
   }
 
 
@@ -114,6 +124,7 @@ export default class Spaeti {
 
 
   refresh(config) {
+    console.log("TDBG refresh");
     let previousWidth = this._private.container.width,
       previousHeight = this._private.container.height;
 
@@ -126,13 +137,14 @@ export default class Spaeti {
     this._private.moveable.x *= this._private.container.width/previousWidth;
     this._private.moveable.y *= this._private.container.height/previousHeight;
 
-    requestAnimationFrame(this._updateSlidePositions);
+    requestAnimationFrame(this._private.boundUpdateSlidePositions);
   }
 
 
   destroy() {
     this._unbindEvents();
     this.kotti.destroy();
+    if (this.resizeDebouncer) this.resizeDebouncer.destroy;
 
     this._config.container = null;
     this._config.slides = null;
@@ -218,6 +230,11 @@ export default class Spaeti {
     fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
       this.bounce.addEventListener(this.bounce.events[eventType], handler);
     });
+
+    if (this.resizeDebouncer) {
+      this._private.boundHandlerResize = this._handleResize.bind(this);
+      this.resizeDebouncer.addEventListener(this.resizeDebouncer.events.resize, this._private.boundHandlerResize);
+    }
   }
 
 
@@ -229,10 +246,19 @@ export default class Spaeti {
     fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
       this.bounce.removeEventListener(this.bounce.events[eventType], handler);
     });
+
+    if (this.resizeDebouncer) {
+      this.resizeDebouncer.removeEventListener(this.resizeDebouncer.events.resize, this._private.boundHandlerResize);
+    }
   }
 
 
   // EVENT HANDLERS
+
+
+  _handleResize() {
+    this.refresh();
+  }
 
 
   _handleTouchStart() {
