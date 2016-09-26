@@ -102,9 +102,7 @@ export default class Spaeti {
     this.kotti = new Kotti(this._config);
     this.bounce = new Bounce(this._config);
 
-    if (this._config.refreshOnResize) {
-      this.resizeDebouncer = new ResizeDebouncer();
-    }
+    if (this._config.refreshOnResize) this.resizeDebouncer = new ResizeDebouncer();
 
     this.events = events;
     utils.addEventTargetInterface(this);
