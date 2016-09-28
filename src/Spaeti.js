@@ -72,8 +72,7 @@ let defaults = {
     axis: ['x'],
     currentSlideIndex: 0,
     previousSlideIndex: -1,
-    currentMoveablePositionX: 0,
-    boundUpdateSlidePositions: null
+    currentMoveablePositionX: 0
   },
 
   state: {
