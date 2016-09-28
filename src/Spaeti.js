@@ -141,7 +141,7 @@ export default class Spaeti {
   destroy() {
     this._unbindEvents();
     this.kotti.destroy();
-    if (this.resizeDebouncer) this.resizeDebouncer.destroy;
+    if (this.resizeDebouncer) this.resizeDebouncer.destroy();
 
     this._config.container = null;
     this._config.slides = null;
