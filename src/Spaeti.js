@@ -54,18 +54,6 @@ let defaults = {
         axisEnd: 0
       }
     },
-    overscroll: {
-      x: {
-        isAxisStart: false,
-        isAxisEnd: false,
-        px: 0
-      },
-      y: {
-        isAxisStart: false,
-        isAxisEnd: false,
-        px: 0
-      }
-    },
     // the current position, relative to the upper-left corner of the first slide
     position: {
       px: { x: 0, y: 0 },
@@ -392,32 +380,6 @@ export default class Spaeti {
 
 
   _updateCoords(newCoordinates) {
-    this._forXY((xy) => {
-
-      // DEAL WITH OVERSCROLLING
-
-      if (this._config.overscroll) {
-        let overscroll = this._private.overscroll,
-          boundaries = this._private.boundaries;
-
-        // reset
-        overscroll[xy].isAxisStart = overscroll[xy].isAxisEnd = false;
-
-        // check on axis start (left or top)
-        if (newCoordinates[xy] < boundaries[xy].axisStart) {
-          overscroll[xy].isAxisStart = true;
-          overscroll[xy].px = boundaries[xy].axisStart - newCoordinates[xy];
-        }
-        // check on axis end (right or bottom)
-        else if (newCoordinates[xy] > boundaries[xy].axisEnd) {
-          overscroll[xy].isAxisEnd = true;
-          overscroll[xy].px = newCoordinates[xy] - boundaries[xy].axisEnd;
-        }
-      }
-    });
-
-    // APPLY NEW COORDINATES AND DISPATCH EVENT
-
     let position = this._private.position;
 
     if (position.px.x !== newCoordinates.x || position.px.y !== newCoordinates.y) {
