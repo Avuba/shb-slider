@@ -142,7 +142,7 @@ export default class Spaeti {
 
 
   scrollToSlide(slideIndex, shouldAnimate, animateTime) {
-    this.scrollToPosition(slideIndex * -this._private.container.width, this._private.position.px.y, shouldAnimate, animateTime);
+    this.scrollTo(slideIndex * -this._private.container.width, this._private.position.px.y, shouldAnimate, animateTime);
   }
 
 

@@ -1,6 +1,6 @@
 {
   "name": "spaeti",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "framework-independent swiper/slides JavaScript UI component",
   "scripts": {
     "build": "webpack --mode=build",
