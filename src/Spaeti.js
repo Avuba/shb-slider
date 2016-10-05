@@ -396,14 +396,10 @@ export default class Spaeti {
           position[xy].percent = position[xy].px / this._private.boundaries[xy].axisEnd;
         }
       });
-<<<<<<< HEAD
+      
       requestAnimationFrame(() => {
         this._updateSlidePositions();
       });
-=======
-
-      requestAnimationFrame(this._private.boundUpdateSlidePositions);
->>>>>>> ec144d09631b0096be2e30a4b5408c82fc868028
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
