@@ -432,8 +432,8 @@ export default class Spaeti {
 
   // sets the position of all slides to the left of the container, so they aren't visible
   _resetSlidePositions() {
-    this._config.slides.forEach((moveable) => {
-      moveable.style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
+    this._config.slides.forEach((slide) => {
+      slide.style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
     });
   }
 
