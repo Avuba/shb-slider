@@ -30,7 +30,7 @@ export default class ResizeDebouncer {
     utils.addEventTargetInterface(this);
 
     this._private.boundOnResize = this._onResize.bind(this);
-    addEventListener('resize', this._private.boundOnResize);
+    window.addEventListener('resize', this._private.boundOnResize);
   }
 
 
