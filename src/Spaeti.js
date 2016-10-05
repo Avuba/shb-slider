@@ -172,10 +172,11 @@ export default class Spaeti {
           this._hideSlide(this._private.currentSlideIndex);
         });
       }
+
       this._updateCoords(validPosition);
 
       // on animated scroll, events happen as result of the animation logic; on an instant scroll
-      // we need to trigger them here, as the transition is instant
+      // we need to trigger them all here, as the transition is instant
       let eventData = {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
@@ -290,12 +291,12 @@ export default class Spaeti {
       boundaries = this._private.boundaries;
 
     this._forXY((xy) => {
-      // direction obtained from kotti is opposite to how we keep coordinates
+      // directions obtained from kotti are negative, spaeti works with positive coordinates
       let pxToAdd = pushBy[xy].px * (-pushBy[xy].direction);
 
       // OVERSCROLLING IS ALLOWED
 
-      // the further you overscroll, the smaller is the displacement; we multiply the displacement
+      // the further you overscroll, the smaller the displacement; we multiply the displacement
       // by a linear factor of the overscroll distance
       if (this._config.overscroll) {
         // check on axis start (left or top)
@@ -395,9 +396,14 @@ export default class Spaeti {
           position[xy].percent = position[xy].px / this._private.boundaries[xy].axisEnd;
         }
       });
+<<<<<<< HEAD
       requestAnimationFrame(() => {
         this._updateSlidePositions();
       });
+=======
+
+      requestAnimationFrame(this._private.boundUpdateSlidePositions);
+>>>>>>> ec144d09631b0096be2e30a4b5408c82fc868028
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
@@ -532,7 +538,6 @@ export default class Spaeti {
     if (!this._state.isTouchActive
         && !this._private.isBouncingOnAxis.x
         && !this._private.isBouncingOnAxis.y) {
-
       let position = this._private.position;
 
       this.dispatchEvent(new Event(events.positionStable), {
@@ -557,6 +562,7 @@ export default class Spaeti {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
       });
+
       this._private.previousSlideIndex = -1;
     }
   }
