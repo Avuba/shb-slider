@@ -387,16 +387,16 @@ export default class Spaeti {
     let position = this._private.position;
 
     if (position.x.px !== newCoordinates.x || position.y.px !== newCoordinates.y) {
-      // set the current position in pixels and calculate the percentile
+      // set the current position in pixels and calculate the percentage
       this._forXY((xy) => {
         position[xy].px = newCoordinates[xy];
         // if the moveable is smaller than the container, we skip this and avoid a division by 0,
-        // in which case the percentile will remain unchanged and always be 0
+        // in which case the percentage will remain unchanged and always be 0
         if (this._private.boundaries[xy].axisEnd > 0) {
           position[xy].percent = position[xy].px / this._private.boundaries[xy].axisEnd;
         }
       });
-      
+
       requestAnimationFrame(() => {
         this._updateSlidePositions();
       });
