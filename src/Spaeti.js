@@ -53,11 +53,11 @@ let defaults = {
     position: {
       x: {
         px: 0,
-        percent: 0
+        percentage: 0
       },
       y: {
         px: 0,
-        percent: 0
+        percentage: 0
       }
     },
     axis: ['x'],
@@ -393,7 +393,7 @@ export default class Spaeti {
         // if the moveable is smaller than the container, we skip this and avoid a division by 0,
         // in which case the percentage will remain unchanged and always be 0
         if (this._private.boundaries[xy].axisEnd > 0) {
-          position[xy].percent = position[xy].px / this._private.boundaries[xy].axisEnd;
+          position[xy].percentage = position[xy].px / this._private.boundaries[xy].axisEnd;
         }
       });
 
@@ -406,9 +406,9 @@ export default class Spaeti {
           x: position.x.px,
           y: position.y.px
         },
-        percent: {
-          x: position.x.percent,
-          y: position.y.percent
+        percentage: {
+          x: position.x.percentage,
+          y: position.y.percentage
         }
       });
     }
@@ -541,9 +541,9 @@ export default class Spaeti {
           x: position.x.px,
           y: position.y.px
         },
-        percent: {
-          x: position.x.percent,
-          y: position.y.percent
+        percentage: {
+          x: position.x.percentage,
+          y: position.y.percentage
         }
       });
     }
