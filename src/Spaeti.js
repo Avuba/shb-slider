@@ -168,7 +168,7 @@ export default class Spaeti {
       // visible position, so we need to push it out; the "current" index is passed because the
       // actual index may have changed when the RAF code gets executed
       if (Math.abs(validPosition.x - this._private.position.x.px) >= this._private.container.width) {
-        requestAnimationFrame(() =>{
+        requestAnimationFrame(() => {
           this._hideSlide(this._private.currentSlideIndex);
         });
       }
