@@ -323,7 +323,7 @@ export default class Spaeti {
         // check on axis end (right or bottom)
         else if (newCoordinates[xy] > boundaries[xy].axisEnd) {
           newCoordinates[xy] = boundaries[xy].axisEnd;
-        }  
+        }
       }
     });
 
@@ -425,10 +425,12 @@ export default class Spaeti {
     this._config.container.style.overflow = 'hidden';
 
     this._config.slides.forEach((slide) => {
+      slide.style.position = 'absolute';
+      slide.style.left = '0px';
+      slide.style.top = '0px';
+      slide.style.webkitTransform = 'translate3d(0px,0px,0px)';
       slide.style.width = '100%';
       slide.style.height = '100%';
-      slide.style.position = 'absolute';
-      slide.style.webkitTransform = 'translate3d(0px, 0px, 0px)';
       slide.style.willChange = 'transform';
     });
   }
