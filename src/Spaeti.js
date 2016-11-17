@@ -2,7 +2,6 @@ import { default as Kotti } from '../node_modules/kotti/dist/Kotti.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as Bounce } from './Bounce.js';
-import { default as ResizeDebouncer } from './ResizeDebouncer.js';
 
 
 let defaults = {
@@ -95,8 +94,6 @@ export default class Spaeti {
     this.kotti = new Kotti(this._config);
     this.bounce = new Bounce(this._config);
 
-    if (this._config.refreshOnResize) this.resizeDebouncer = new ResizeDebouncer();
-
     this.events = events;
     utils.addEventTargetInterface(this);
     this._bindEvents();
@@ -135,7 +132,6 @@ export default class Spaeti {
   destroy() {
     this._unbindEvents();
     this.kotti.destroy();
-    if (this.resizeDebouncer) this.resizeDebouncer.destroy();
 
     this._config.container = null;
     this._config.slides = null;
@@ -219,9 +215,8 @@ export default class Spaeti {
       this.bounce.addEventListener(this.bounce.events[eventType], handler);
     });
 
-    if (this.resizeDebouncer) {
-      this._private.boundHandlerResize = this._handleResize.bind(this);
-      this.resizeDebouncer.addEventListener(this.resizeDebouncer.events.resize, this._private.boundHandlerResize);
+    if (this._config.refreshOnResize) {
+      this._private.removeDebouncedResize = utils.listenDebounced(window, 'resize', this._handleResize.bind(this));
     }
   }
 
@@ -235,9 +230,7 @@ export default class Spaeti {
       this.bounce.removeEventListener(this.bounce.events[eventType], handler);
     });
 
-    if (this.resizeDebouncer) {
-      this.resizeDebouncer.removeEventListener(this.resizeDebouncer.events.resize, this._private.boundHandlerResize);
-    }
+    if (this._private.removeDebouncedResize) this._private.removeDebouncedResize();
   }
 
 
@@ -428,7 +421,7 @@ export default class Spaeti {
       slide.style.position = 'absolute';
       slide.style.left = '0px';
       slide.style.top = '0px';
-      slide.style.webkitTransform = 'translate3d(0px,0px,0px)';
+      slide.style.webkitTransform = 'translate3d(0px, 0px, 0px)';
       slide.style.width = '100%';
       slide.style.height = '100%';
       slide.style.willChange = 'transform';

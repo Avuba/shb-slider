@@ -86,4 +86,24 @@ _export.addEventTargetInterface = function(target) {
 };
 
 
+/**
+ * listen to events debounced
+ */
+_export.listenDebounced = function(target, event, externalHandler, duration) {
+  duration = duration || 250;
+
+  let timeout,
+    internalHandler = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(externalHandler, duration)
+    };
+
+  target.addEventListener(event, internalHandler);
+
+  return () => {
+    target.removeEventListener(event, internalHandler);
+  };
+};
+
+
 export default _export;
