@@ -66,6 +66,7 @@ _export.addEventTargetInterface = function(target) {
     if (!(type in target.listeners)) return;
 
     let stack = target.listeners[type];
+    
     for (let i = 0, l = stack.length; i < l; i++) {
       if (stack[i] === callback) {
         stack.splice(i, 1);
@@ -79,6 +80,7 @@ _export.addEventTargetInterface = function(target) {
     if (data) event.data = data;
 
     let stack = target.listeners[event.type];
+
     for (let i = 0, l = stack.length; i < l; i++) {
       stack[i].call(target, event);
     }

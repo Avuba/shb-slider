@@ -6,15 +6,14 @@ import { default as Bounce } from './Bounce.js';
 
 let defaults = {
   config: {
-    // main container for defining the boundaries of the scrollable area and
-    // setting the event listeners. is expected to be a simple DOM node
+    // main container, direct parent of all slides
     container: null,
 
     // array containing the moveable DOM nodes representing each slide
     slides: [],
 
-    // decide what axis to allow scrolling on, gets translated into an array by
-    // the class constructor
+    // decide what axis to allow scrolling on, gets translated into an array by the class
+    // constructor. NOTE: this class only supports the X axis
     axis: 'x',
 
     // allow scrolling beyond the edge of moveable
@@ -59,17 +58,20 @@ let defaults = {
         percentage: 0
       }
     },
-    axis: ['x'],
-    isBouncingOnAxis: { x: false, y: false },
+    // stores the relative position of the currently displayed slide; used when scrolling, esp. to
+    // determine which slides to actually move in the DOM, and which position to bounce to
+    currentSlidePositionX: 0,
     currentSlideIndex: 0,
     previousSlideIndex: -1,
-    // stores the relative position of the currently displaying slide; used when scrolling, esp. to
-    // determine which slides to actually move in the DOM, and which position to bounce to
-    currentSlidePositionX: 0
+    axis: ['x']
   },
 
   state: {
-    isTouchActive: false
+    isTouchActive: false,
+    isBouncingOnAxis: {
+      x: false,
+      y: false
+    }
   }
 };
 
@@ -121,8 +123,8 @@ export default class Spaeti {
       this._resetSlidePositions();
 
       // since the slides are set to the same size as the container, we can restore the position
-      this._private.position.x.px *= this._private.container.width/previousWidth;
-      this._private.position.y.px *= this._private.container.height/previousHeight;
+      this._private.position.x.px *= this._private.container.width / previousWidth;
+      this._private.position.y.px *= this._private.container.height / previousHeight;
 
       this._updateSlidePositions();
     });
@@ -244,7 +246,7 @@ export default class Spaeti {
 
   _handleTouchStart() {
     this._state.isTouchActive = true;
-    if (this._private.isBouncingOnAxis.x || this._private.isBouncingOnAxis.y) {
+    if (this._state.isBouncingOnAxis.x || this._state.isBouncingOnAxis.y) {
       this.bounce.stop();
     }
   }
@@ -259,12 +261,12 @@ export default class Spaeti {
 
 
   _handleBounceStartOnAxis(event) {
-    this._private.isBouncingOnAxis[event.data.axis] = true;
+    this._state.isBouncingOnAxis[event.data.axis] = true;
   }
 
 
   _handleBounceEndOnAxis(event) {
-    this._private.isBouncingOnAxis[event.data.axis] = false;
+    this._state.isBouncingOnAxis[event.data.axis] = false;
     this._checkForSlideChangeEnd();
     this._checkForPositionStable();
   }
@@ -517,7 +519,7 @@ export default class Spaeti {
 
 
   _checkForBounceStartOnAxis(axis) {
-    if (!this._state.isTouchActive && !this._private.isBouncingOnAxis[axis]) {
+    if (!this._state.isTouchActive && !this._state.isBouncingOnAxis[axis]) {
       let targetPositionOnAxis = this._getClosestBounceTargetOnAxis(axis);
 
       if (targetPositionOnAxis !== this._private.position[axis].px) {
@@ -529,8 +531,8 @@ export default class Spaeti {
 
   _checkForPositionStable() {
     if (!this._state.isTouchActive
-        && !this._private.isBouncingOnAxis.x
-        && !this._private.isBouncingOnAxis.y) {
+        && !this._state.isBouncingOnAxis.x
+        && !this._state.isBouncingOnAxis.y) {
       let position = this._private.position;
 
       this.dispatchEvent(new Event(events.positionStable), {
@@ -548,8 +550,8 @@ export default class Spaeti {
 
 
   _checkForSlideChangeEnd() {
-    if (!this._private.isBouncingOnAxis.x
-        && !this._private.isBouncingOnAxis.y
+    if (!this._state.isBouncingOnAxis.x
+        && !this._state.isBouncingOnAxis.y
         && this._private.previousSlideIndex >= 0) {
       this.dispatchEvent(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
