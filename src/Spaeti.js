@@ -317,11 +317,13 @@ export default class Spaeti {
       else {
         newCoordinates[xy] = this._private.position[xy].px + pxToAdd;
         // check on axis start (left or top)
-        if (newCoordinates[xy] < boundaries[xy].axisStart)
+        if (newCoordinates[xy] < boundaries[xy].axisStart) {
           newCoordinates[xy] = boundaries[xy].axisStart;
+        }
         // check on axis end (right or bottom)
-        else if (newCoordinates[xy] > boundaries[xy].axisEnd)
+        else if (newCoordinates[xy] > boundaries[xy].axisEnd) {
           newCoordinates[xy] = boundaries[xy].axisEnd;
+        }  
       }
     });
 

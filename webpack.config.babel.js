@@ -46,7 +46,7 @@ module.exports = {
     umdNamedDefine: true
   },
   eslint: {
-    fix: true,
+    fix: false,
     quiet: true
   },
   module: {
