@@ -1,0 +1,11 @@
+# directories
+dev
+dist
+node_modules
+
+# files
+.eslintrc*
+package.json
+webpack.config*
+
+# edge cases

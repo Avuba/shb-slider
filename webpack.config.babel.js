@@ -45,15 +45,19 @@ module.exports = {
     libraryTarget: 'umd',
     umdNamedDefine: true
   },
+  eslint: {
+    fix: true,
+    quiet: true
+  },
   module: {
     loaders: [{
       test: /\.js$/,
       exclude: /node_modules/,
-      loader: 'babel-loader',
+      loaders: ['babel-loader', 'eslint-loader']
     }]
   },
   plugins: plugins,
   devServer: {
-    contentBase: "./dev",
+    contentBase: "./dev"
   }
 };
