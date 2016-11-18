@@ -37,6 +37,8 @@ let defaults = {
       height: 0,
       width: 0
     },
+    // this refers to the "abstract moveable", which has the length of all slides combined. the
+    // values are relative to the upper-left corner of the first slide
     boundaries: {
       x: {
         axisStart: 0,
@@ -47,7 +49,8 @@ let defaults = {
         axisEnd: 0
       }
     },
-    // the current position, relative to the upper-left corner of the first slide
+    // the position of the "abstract moveable". the values are relative to the upper-left corner of
+    // the first slide
     position: {
       x: {
         px: 0,
@@ -148,8 +151,8 @@ export default class Spaeti {
   scrollTo(left, top, shouldAnimate, animateTime) {
     let validPosition = { x: left, y: top };
 
+    // check if coordinates are within bounds, constrain them otherwise
     this._forXY((xy) => {
-      // check if coordinates are within bounds, constrain them otherwise
       if (validPosition[xy] < this._private.boundaries[xy].axisStart) {
         validPosition[xy] = this._private.boundaries[xy].axisStart;
       }
@@ -173,7 +176,7 @@ export default class Spaeti {
 
       this._updateCoords(validPosition);
 
-      // on animated scroll, events happen as result of the animation logic; on an instant scroll
+      // on animated scroll, events happen as result of the animation logic; on an instant scroll,
       // we need to trigger them all here, as the transition is instant
       let eventData = {
         previousIndex: this._private.previousSlideIndex,
@@ -218,7 +221,8 @@ export default class Spaeti {
     });
 
     if (this._config.refreshOnResize) {
-      this._private.removeDebouncedResize = utils.listenDebounced(window, 'resize', this._handleResize.bind(this));
+      this._private.boundDebouncedHandleResize = utils.getDebounced(this._handleResize.bind(this));
+      window.addEventListener('resize', this._private.boundDebouncedHandleResize);
     }
   }
 
@@ -232,7 +236,9 @@ export default class Spaeti {
       this.bounce.removeEventListener(this.bounce.events[eventType], handler);
     });
 
-    if (this._private.removeDebouncedResize) this._private.removeDebouncedResize();
+    if (this._private.boundDebouncedHandleResize) {
+      window.removeEventListener('resize', this._private.boundDebouncedHandleResize);
+    }
   }
 
 
@@ -493,6 +499,8 @@ export default class Spaeti {
     // apply the transform to the current slide
     this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
       ${-this._private.currentSlidePositionX}px, ${-this._private.position.y.px}px, 0px)`;
+
+    // TODO: figure out the direction, only apply the transformation to where it's actually needed
 
     // apply the transform to the slide to the left
     if (this._private.currentSlideIndex > 0) {

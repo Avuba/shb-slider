@@ -66,7 +66,7 @@ _export.addEventTargetInterface = function(target) {
     if (!(type in target.listeners)) return;
 
     let stack = target.listeners[type];
-    
+
     for (let i = 0, l = stack.length; i < l; i++) {
       if (stack[i] === callback) {
         stack.splice(i, 1);
@@ -89,21 +89,15 @@ _export.addEventTargetInterface = function(target) {
 
 
 /**
- * listen to events debounced
+ * get debounced function
  */
-_export.listenDebounced = function(target, event, externalHandler, duration) {
+_export.getDebounced = function(callback, duration) {
   duration = duration || 250;
+  let timeout;
 
-  let timeout,
-    internalHandler = () => {
-      if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(externalHandler, duration)
-    };
-
-  target.addEventListener(event, internalHandler);
-
-  return () => {
-    target.removeEventListener(event, internalHandler);
+  return function() {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(callback, duration);
   };
 };
 
