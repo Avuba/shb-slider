@@ -1,4 +1,4 @@
-import { default as Kotti } from '../node_modules/kotti/dist/Kotti.js';
+import { default as ShbTouch } from '../node_modules/kotti/dist/Kotti.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as Bounce } from './Bounce.js';
@@ -61,8 +61,9 @@ let defaults = {
         percentage: 0
       }
     },
-    // stores the relative position of the currently displayed slide; used when scrolling, esp. to
-    // determine which slides to actually move in the DOM, and which position to bounce to
+    // stores the relative position of the currently most visible (> 50%) slide, used when
+    // scrolling, esp. to determine which slides to actually move in the DOM, and which position
+    // to bounce to if required
     currentSlidePositionX: 0,
     currentSlideIndex: 0,
     previousSlideIndex: -1,
@@ -96,7 +97,7 @@ export default class Spaeti {
 
     if (config) fUtils.mergeDeep(this._config, config);
 
-    this.kotti = new Kotti(this._config);
+    this.shbTouch = new ShbTouch(this._config);
     this.bounce = new Bounce(this._config);
 
     this.events = events;
@@ -136,7 +137,7 @@ export default class Spaeti {
 
   destroy() {
     this._unbindEvents();
-    this.kotti.destroy();
+    this.shbTouch.destroy();
 
     this._config.container = null;
     this._config.slides = null;
@@ -152,14 +153,12 @@ export default class Spaeti {
     let validPosition = { x: left, y: top };
 
     // check if coordinates are within bounds, constrain them otherwise
-    this._forXY((xy) => {
-      if (validPosition[xy] < this._private.boundaries[xy].axisStart) {
-        validPosition[xy] = this._private.boundaries[xy].axisStart;
-      }
-      else if (validPosition[xy] > this._private.boundaries[xy].axisEnd) {
-        validPosition[xy] = this._private.boundaries[xy].axisEnd;
-      }
-    });
+    if (validPosition.x < this._private.boundaries.x.axisStart) {
+      validPosition.x = this._private.boundaries.x.axisStart;
+    }
+    else if (validPosition.x > this._private.boundaries.x.axisEnd) {
+      validPosition.x = this._private.boundaries.x.axisEnd;
+    }
 
     if (shouldAnimate) {
       this.bounce.bounceToTarget({ x: this._private.position.x.px, y: this._private.position.y.px }, validPosition, animateTime);
@@ -191,7 +190,7 @@ export default class Spaeti {
 
 
   freezeScroll(shouldFreeze) {
-    this.kotti.setEnabled(!shouldFreeze);
+    this.shbTouch.setEnabled(!shouldFreeze);
   }
 
 
@@ -199,55 +198,50 @@ export default class Spaeti {
 
 
   _bindEvents() {
-    this._private.boundHandlersKotti = {
+    this._private.boundShbTouchHandlers = {
       touchStart: this._handleTouchStart.bind(this),
       touchEnd: this._handleTouchEnd.bind(this),
       pushBy: this._handlePushBy.bind(this),
       finishedTouchWithMomentum: this._handleMomentum.bind(this)
     };
 
-    fUtils.forEach(this._private.boundHandlersKotti, (handler, eventType) => {
-      this.kotti.addEventListener(this.kotti.events[eventType], handler);
+    fUtils.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
+      this.shbTouch.addEventListener(this.shbTouch.events[eventName], handler);
     });
 
-    this._private.boundHandlersBounce = {
+    this._private.boundBounceHandlers = {
       bounceStartOnAxis: this._handleBounceStartOnAxis.bind(this),
       bounceEndOnAxis: this._handleBounceEndOnAxis.bind(this),
       bounceToPosition: this._handleBounceToPosition.bind(this)
     };
 
-    fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
-      this.bounce.addEventListener(this.bounce.events[eventType], handler);
+    fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
+      this.bounce.addEventListener(eventName, handler);
     });
 
     if (this._config.refreshOnResize) {
-      this._private.boundDebouncedHandleResize = utils.getDebounced(this._handleResize.bind(this));
-      window.addEventListener('resize', this._private.boundDebouncedHandleResize);
+      this._private.boundDebouncedRefresh = utils.getDebounced(this.refresh.bind(this));
+      window.addEventListener('resize', this._private.boundDebouncedRefresh);
     }
   }
 
 
   _unbindEvents() {
-    fUtils.forEach(this._private.boundHandlersKotti, (handler, eventType) => {
-      this.kotti.removeEventListener(this.kotti.events[eventType], handler);
+    fUtils.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
+      this.shbTouch.removeEventListener(this.shbTouch.events[eventName], handler);
     });
 
-    fUtils.forEach(this._private.boundHandlersBounce, (handler, eventType) => {
-      this.bounce.removeEventListener(this.bounce.events[eventType], handler);
+    fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
+      this.bounce.removeEventListener(eventName, handler);
     });
 
-    if (this._private.boundDebouncedHandleResize) {
-      window.removeEventListener('resize', this._private.boundDebouncedHandleResize);
+    if (this._private.boundDebouncedRefresh) {
+      window.removeEventListener('resize', this._private.boundDebouncedRefresh);
     }
   }
 
 
   // EVENT HANDLERS
-
-
-  _handleResize() {
-    this.refresh();
-  }
 
 
   _handleTouchStart() {
@@ -291,42 +285,41 @@ export default class Spaeti {
       },
       boundaries = this._private.boundaries;
 
-    this._forXY((xy) => {
-      // directions obtained from kotti are negative, spaeti works with positive coordinates
-      let pxToAdd = pushBy[xy].px * (-pushBy[xy].direction);
+    // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
+    let pxToAdd = pushBy.x.px * pushBy.x.direction * -1;
 
-      // OVERSCROLLING IS ALLOWED
+    // OVERSCROLLING IS ALLOWED
 
-      // the further you overscroll, the smaller the displacement; we multiply the displacement
-      // by a linear factor of the overscroll distance
-      if (this._config.overscroll) {
-        // check on axis start (left or top)
-        if (pushBy[xy].direction > 0 && this._private.position[xy].px < boundaries[xy].axisStart) {
-          pxToAdd *= utils.easeLinear(Math.abs(this._private.position[xy].px), 1, -1, this._config.maxTouchOverscroll);
-        }
-        // check on axis end (right or bottom)
-        else if (pushBy[xy].direction < 0 && this._private.position[xy].px > boundaries[xy].axisEnd) {
-          let rightBottom = boundaries[xy].axisEnd - this._private.position[xy].px;
-          pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
-        }
-
-        newCoordinates[xy] = this._private.position[xy].px + pxToAdd;
+    // the further you overscroll, the smaller the displacement; we multiply the displacement
+    // by a linear factor of the overscroll distance
+    if (this._config.overscroll) {
+      // check on axis start (left end)
+      if (pushBy.x.direction > 0 && this._private.position.x.px < boundaries.x.axisStart) {
+        pxToAdd *= utils.easeLinear(Math.abs(this._private.position.x.px), 1, -1, this._config.maxTouchOverscroll);
+      }
+      // check on axis end (right end)
+      else if (pushBy.x.direction < 0 && this._private.position.x.px > boundaries.x.axisEnd) {
+        let rightBottom = boundaries.x.axisEnd - this._private.position.x.px;
+        pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
       }
 
-      // OVERSCROLLING IS NOT ALLOWED
+      newCoordinates.x = this._private.position.x.px + pxToAdd;
+    }
 
-      else {
-        newCoordinates[xy] = this._private.position[xy].px + pxToAdd;
-        // check on axis start (left or top)
-        if (newCoordinates[xy] < boundaries[xy].axisStart) {
-          newCoordinates[xy] = boundaries[xy].axisStart;
-        }
-        // check on axis end (right or bottom)
-        else if (newCoordinates[xy] > boundaries[xy].axisEnd) {
-          newCoordinates[xy] = boundaries[xy].axisEnd;
-        }
+    // OVERSCROLLING IS NOT ALLOWED
+
+    else {
+      newCoordinates.x = this._private.position.x.px + pxToAdd;
+
+      // check on axis start (left or top)
+      if (newCoordinates.x < boundaries.x.axisStart) {
+        newCoordinates.x = boundaries.x.axisStart;
       }
-    });
+      // check on axis end (right or bottom)
+      else if (newCoordinates.x > boundaries.x.axisEnd) {
+        newCoordinates.x = boundaries.x.axisEnd;
+      }
+    }
 
     this._updateCoords(newCoordinates);
   }
@@ -334,29 +327,31 @@ export default class Spaeti {
 
   _handleMomentum(event) {
     let momentum = event.data,
-      targetPositionPx;
+      targetPositionX;
 
-    // enough momentum on the x axis will trigger a slide transition, otherwise ignore. we only
-    // care about momentum on the x axis, as the Spaeti will only move in this direction
+    // only a certain amount of momentum will trigger a slide transition. we only care about
+    // momentum on the x axis, as the ShbSwipe only moves along this axis
     if (momentum.x.pxPerFrame < this._config.minMomentumForTransition) return;
 
-    // before calculating a target position, we also check if the we are in the first (or last)
-    // slide and if the current slide is already bouncing from a transition in the same
-    // direction as the momentum; so if the user's finger lifts when already transitioning to the
-    // next slide, momentum is ignored (otherwise the total transition would be 2 slides)
-    if (momentum.x.direction > 0
-        && this._private.currentSlideIndex > 0
-        && this._private.currentSlidePositionX < 0) {
-      targetPositionPx = (this._private.currentSlideIndex -1) * this._private.container.width;
+    // before calculating a target position, we also check:
+    // - if the we are in the first or last
+    // - if the current slide hasn't passed the center point already (momentum won't trigger a
+    // bounceToTargetOnAxis() in this case because a transition to the next slide will happen once
+    // the user lifts his finger)
+
+    if (momentum.x.direction > 0 // -1 = moving left
+        && this._private.currentSlideIndex > 0 // shouldn't be first slide
+        && this._private.currentSlidePositionX < 0) { // check if slide hasn't passed the center
+      targetPositionX = (this._private.currentSlideIndex -1) * this._private.container.width;
     }
-    else if (momentum.x.direction < 0
-        && this._private.currentSlideIndex < this._config.slides.length -1
-        && this._private.currentSlidePositionX > 0) {
-      targetPositionPx = (this._private.currentSlideIndex +1) * this._private.container.width;
+    else if (momentum.x.direction < 0 // 1 = moving right
+        && this._private.currentSlideIndex < this._config.slides.length -1 // shouldn't be last slide
+        && this._private.currentSlidePositionX > 0) { // check if slide hasn't passed the center
+      targetPositionX = (this._private.currentSlideIndex +1) * this._private.container.width;
     }
 
-    if (targetPositionPx >= 0) {
-      this.bounce.bounceToTargetOnAxis('x', this._private.position.x.px, targetPositionPx);
+    if (targetPositionX >= 0) {
+      this.bounce.bounceToTargetOnAxis('x', this._private.position.x.px, targetPositionX);
     }
   }
 
@@ -368,41 +363,25 @@ export default class Spaeti {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
 
-    // width and height of the combined slides, assuming that each slide has the same dimensions
-    // as the container
-    let moveableDimensions = {
-      width: this._private.container.width * this._config.slides.length,
-      height: this._private.container.height
-    };
-
-    // calculate the maximum and minimum coordinates for scrolling. these are used as boundaries for
-    // determining overscroll status, initiating bounce (if allowed); and also to determine bounce
-    // target position when overscrolling
-    this._forXY((xy) => {
-      let dimension = xy === 'x' ? 'width' : 'height';
-      this._private.boundaries[xy].axisStart = 0;
-      this._private.boundaries[xy].axisEnd = moveableDimensions[dimension] - this._private.container[dimension];
-    });
+    this._private.boundaries.x.axisStart = 0;
+    this._private.boundaries.x.axisEnd = this._private.container.width * (this._config.slides.length - 1);
   }
 
 
   _updateCoords(newCoordinates) {
     let position = this._private.position;
 
-    if (position.x.px !== newCoordinates.x || position.y.px !== newCoordinates.y) {
-      // set the current position in pixels and calculate the percentage
-      this._forXY((xy) => {
-        position[xy].px = newCoordinates[xy];
-        // if the moveable is smaller than the container, we skip this and avoid a division by 0,
-        // in which case the percentage will remain unchanged and always be 0
-        if (this._private.boundaries[xy].axisEnd > 0) {
-          position[xy].percentage = position[xy].px / this._private.boundaries[xy].axisEnd;
-        }
-      });
+    if (position.x.px !== newCoordinates.x) {
+      // set the current position in pixels
+      position.x.px = newCoordinates.x;
 
-      requestAnimationFrame(() => {
-        this._updateSlidePositions();
-      });
+      // calculate the percentage. if the moveable is smaller than the container, we skip this and
+      // avoid a division by 0, in which case the percentage will remain unchanged and always be 0
+      if (this._private.boundaries.x.axisEnd > 0) {
+        position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
+      }
+
+      requestAnimationFrame(() => this._updateSlidePositions());
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
@@ -421,7 +400,7 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  // sets the attributes of dom elements for use with the spaeti
+  // sets the attributes of dom elements for use with the ShbSwipe
   _setupDomElements() {
     this._config.container.style.overflow = 'hidden';
 
@@ -451,6 +430,7 @@ export default class Spaeti {
 
 
   _updateSlidePositions() {
+    // index of the slide that's currently most visible (> 50%)
     let updatedSlideIndex = Math.round(this._private.position.x.px / this._private.container.width);
 
     // constrain the calculated index when overscrolling
@@ -520,18 +500,11 @@ export default class Spaeti {
 
 
   _checkForBounceStart() {
-    this._forXY((xy) => {
-      this._checkForBounceStartOnAxis(xy);
-    });
-  }
+    if (!this._state.isTouchActive && !this._state.isBouncingOnAxis.x) {
+      let targetPositionX = this._getClosestBounceTarget();
 
-
-  _checkForBounceStartOnAxis(axis) {
-    if (!this._state.isTouchActive && !this._state.isBouncingOnAxis[axis]) {
-      let targetPositionOnAxis = this._getClosestBounceTargetOnAxis(axis);
-
-      if (targetPositionOnAxis !== this._private.position[axis].px) {
-        this.bounce.bounceToTargetOnAxis(axis, this._private.position[axis].px, targetPositionOnAxis);
+      if (targetPositionX !== this._private.position.x.px) {
+        this.bounce.bounceToTargetOnAxis('x', this._private.position.x.px, targetPositionX);
       }
     }
   }
@@ -574,36 +547,30 @@ export default class Spaeti {
   // HELPERS
 
 
-  // returns the closest bounce-to target on the given axis
-  _getClosestBounceTargetOnAxis(axis) {
+  _getClosestBounceTarget() {
     let position = this._private.position,
-      bounceTarget = position[axis].px;
+      bounceTarget = position.x.px;
 
-    // check the outer boundaries of the moveable
-    if (position[axis].px < this._private.boundaries[axis].axisStart) {
-      bounceTarget = this._private.boundaries[axis].axisStart;
+    // swiper is overscrolling left
+    if (position.x.px < this._private.boundaries.x.axisStart) {
+      bounceTarget = this._private.boundaries.x.axisStart;
     }
-    else if (position[axis].px > this._private.boundaries[axis].axisEnd) {
-      bounceTarget = this._private.boundaries[axis].axisEnd;
+    // swiper is overscrolling right
+    else if (position.x.px > this._private.boundaries.x.axisEnd) {
+      bounceTarget = this._private.boundaries.x.axisEnd;
     }
-    // check the inner boundaries of the current moveable; only applies to x-axis
-    else if (axis === 'x') {
-      let targetLeft = this._private.currentSlideIndex * this._private.container.width,
-        targetRight = targetLeft + this._private.container.width;
-
-      if (Math.abs(position[axis].px - targetLeft) < this._private.container.width / 2) {
-        bounceTarget = targetLeft;
+    // swiper somewhere in the middle
+    else {
+      // slide hangs on the left side relative to the container center
+      if (Math.abs(this._private.currentSlidePositionX) < this._private.container.width / 2) {
+        bounceTarget = this._private.currentSlideIndex * this._private.container.width;
       }
+      // slide hangs on the right side relative to the container center
       else {
-        bounceTarget = targetRight;
+        bounceTarget = (this._private.currentSlideIndex +1) * this._private.container.width;
       }
     }
 
     return bounceTarget;
-  }
-
-
-  _forXY(toExecute) {
-    this._private.axis.forEach(toExecute);
   }
 }
