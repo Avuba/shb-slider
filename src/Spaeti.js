@@ -72,6 +72,7 @@ let defaults = {
 
   state: {
     isTouchActive: false,
+    isSlideVisible: {},
     isBouncingOnAxis: {
       x: false,
       y: false
@@ -107,7 +108,7 @@ export default class Spaeti {
     requestAnimationFrame(() => {
       this._setupDomElements();
       this._calculateParams();
-      this._resetSlidePositions();
+      this._hideAllSlides();
       this._updateSlidePositions();
     });
   }
@@ -124,7 +125,7 @@ export default class Spaeti {
 
     requestAnimationFrame(() => {
       this._calculateParams();
-      this._resetSlidePositions();
+      this._hideAllSlides();
 
       // since the slides are set to the same size as the container, we can restore the position
       this._private.position.x.px *= this._private.container.width / previousWidth;
@@ -169,7 +170,7 @@ export default class Spaeti {
       // actual index may have changed when the RAF code gets executed
       if (Math.abs(validPosition.x - this._private.position.x.px) >= this._private.container.width) {
         requestAnimationFrame(() => {
-          this._hideSlide(this._private.currentSlideIndex);
+          this._hideSingleSlide(this._private.currentSlideIndex);
         });
       }
 
@@ -400,10 +401,11 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  // sets the attributes of dom elements for use with the ShbSwipe
   _setupDomElements() {
+    // attributes requried by the container
     this._config.container.style.overflow = 'hidden';
 
+    // attributes requried by the slides
     this._config.slides.forEach((slide) => {
       slide.style.position = 'absolute';
       slide.style.left = '0px';
@@ -416,16 +418,8 @@ export default class Spaeti {
   }
 
 
-  // sets the position of all slides to the left of the container, so they aren't visible
-  _resetSlidePositions() {
-    this._config.slides.forEach((slide) => {
-      slide.style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
-    });
-  }
-
-
-  _hideSlide(slideIndex) {
-    this._config.slides[slideIndex].style.webkitTransform = `translate3d(${this._private.container.width}px, 0px, 0px)`;
+  _applySlidePosition(slideIndex, position) {
+    this._config.slides[slideIndex].style.webkitTransform = `translate3d(${position}px, 0px, 0px)`;
   }
 
 
@@ -445,13 +439,11 @@ export default class Spaeti {
     // inside the container area (if the animation is fast); so we detect slide transitions and make
     // sure the "old" (scrolled-out) slide is pushed off limits and nothing is left hanging out.
     // this behaviour is present in Android 6 Chrome (at least) but not on iOS 9.3.1 Safari
-    if (updatedSlideIndex > this._private.currentSlideIndex && this._private.currentSlideIndex - 1 >= 0) {
-      this._config.slides[this._private.currentSlideIndex - 1].style.webkitTransform = `translate3d(
-        ${this._private.container.width}px, 0px, 0px)`;
+    if (updatedSlideIndex > this._private.currentSlideIndex && this._private.currentSlideIndex -1 >= 0) {
+      this._applySlidePosition(this._private.currentSlideIndex -1, this._private.container.width);
     }
-    else if (updatedSlideIndex < this._private.currentSlideIndex && this._private.currentSlideIndex + 1 < this._config.slides.length) {
-      this._config.slides[this._private.currentSlideIndex + 1].style.webkitTransform = `translate3d(
-        ${this._private.container.width}px, 0px, 0px)`;
+    else if (updatedSlideIndex < this._private.currentSlideIndex && this._private.currentSlideIndex +1 < this._config.slides.length) {
+      this._applySlidePosition(this._private.currentSlideIndex +1, this._private.container.width);
     }
 
     // in case the slide changed, update the previous and current index, send out an event
@@ -474,25 +466,48 @@ export default class Spaeti {
       });
     }
 
+    // calculate and apply position to the currently most visible (> 50%) slide
     this._private.currentSlidePositionX = this._private.position.x.px - (this._private.currentSlideIndex * this._private.container.width);
+    this._applySlidePosition(this._private.currentSlideIndex, -this._private.currentSlidePositionX);
+    this._state.isSlideVisible[this._private.currentSlideIndex] = true;
 
-    // apply the transform to the current slide
-    this._config.slides[this._private.currentSlideIndex].style.webkitTransform = `translate3d(
-      ${-this._private.currentSlidePositionX}px, ${-this._private.position.y.px}px, 0px)`;
-
-    // TODO: figure out the direction, only apply the transformation to where it's actually needed
-
-    // apply the transform to the slide to the left
+    // apply transform to left slide if available and visible, make sure it's hidden otherwise
     if (this._private.currentSlideIndex > 0) {
-      this._config.slides[this._private.currentSlideIndex -1].style.webkitTransform = `translate3d(
-        ${-this._private.currentSlidePositionX - this._private.container.width}px, ${-this._private.position.y.px}px, 0px)`;
+      let leftSlideIndex = this._private.currentSlideIndex - 1;
+
+      if (this._private.currentSlidePositionX < 0) {
+        this._applySlidePosition(leftSlideIndex, -this._private.currentSlidePositionX - this._private.container.width);
+        this._state.isSlideVisible[leftSlideIndex] = true;
+      }
+      else if (this._state.isSlideVisible[leftSlideIndex]) {
+        this._hideSingleSlide(leftSlideIndex);
+      }
     }
 
-    // apply the transform to the slide to the right
+    // apply transform to right slide if available and visible, make sure it's hidden otherwise
     if (this._private.currentSlideIndex < this._config.slides.length -1) {
-      this._config.slides[this._private.currentSlideIndex +1].style.webkitTransform = `translate3d(
-        ${-this._private.currentSlidePositionX + this._private.container.width}px, ${-this._private.position.y.px}px, 0px)`;
+      let rightSlideIndex = this._private.currentSlideIndex + 1;
+
+      if (this._private.currentSlidePositionX > 0) {
+        this._applySlidePosition(rightSlideIndex, -this._private.currentSlidePositionX + this._private.container.width);
+        this._state.isSlideVisible[rightSlideIndex] = true;
+      }
+      else if (this._state.isSlideVisible[rightSlideIndex]) {
+        this._hideSingleSlide(rightSlideIndex);
+      }
     }
+  }
+
+
+  _hideSingleSlide(slideIndex) {
+    // move slide outside of the container
+    this._applySlidePosition(slideIndex, this._private.container.width);
+    this._state.isSlideVisible[slideIndex] = false;
+  }
+
+
+  _hideAllSlides() {
+    this._config.slides.forEach((slide, slideIndex) => this._hideSingleSlide(slideIndex));
   }
 
 
