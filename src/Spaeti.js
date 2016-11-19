@@ -30,6 +30,11 @@ let defaults = {
       height: 0,
       width: 0
     },
+    moveable: {
+      position: 0, // in pixels
+      progress: 0, // in percent
+      width: 0 // in pixels
+    },
     // this refers to the "abstract moveable", which has the length of all slides combined. the
     // values are relative to the upper-left corner of the first slide
     boundaries: {
@@ -59,8 +64,7 @@ let defaults = {
     // to bounce to if required
     currentSlidePositionX: 0,
     currentSlideIndex: 0,
-    previousSlideIndex: -1,
-    axis: ['x']
+    previousSlideIndex: -1
   },
 
   state: {
@@ -136,24 +140,22 @@ export default class Spaeti {
   }
 
 
-  scrollTo(positionX, animateTime) {
-    let validPosition = { x: positionX, y: 0 };
-
+  scrollTo(targetPosition, animateTime) {
     // check if coordinates are within bounds, constrain them otherwise
-    if (validPosition.x < this._private.boundaries.x.axisStart) {
-      validPosition.x = this._private.boundaries.x.axisStart;
+    if (targetPosition < 0) {
+      targetPosition = 0;
     }
-    else if (validPosition.x > this._private.boundaries.x.axisEnd) {
-      validPosition.x = this._private.boundaries.x.axisEnd;
+    else if (targetPosition > this._private.boundaries.x.axisEnd) {
+      targetPosition = this._private.boundaries.x.axisEnd;
     }
 
     if (this._state.isBounceActive) this.bounce.stopBounce();
 
     if (animateTime) {
-      this.bounce.startBounce(this._private.position.x.px, validPosition.x, animateTime);
+      this.bounce.startBounce(this._private.position.x.px, targetPosition, animateTime);
     }
     else {
-      requestAnimationFrame(() => this._updateCoords(validPosition));
+      requestAnimationFrame(() => this._updateMoveablePosition(targetPosition));
 
       // on animated scroll, events happen as result of the animation logic; on an instant scroll,
       // we need to trigger them all here, as the transition is instant
@@ -260,16 +262,13 @@ export default class Spaeti {
 
 
   _onBounceBy(event) {
-    this._updateCoords({ x: event.data });
+    this._updateMoveablePosition(event.data);
   }
 
 
   _onPushBy(event) {
     let pushBy = event.data,
-      newCoords = {
-        x: this._private.position.x.px,
-        y: 0
-      },
+      targetPosition = this._private.position.x.px,
       boundaries = this._private.boundaries;
 
     // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
@@ -287,23 +286,23 @@ export default class Spaeti {
         pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
       }
 
-      newCoords.x = this._private.position.x.px + pxToAdd;
+      targetPosition = this._private.position.x.px + pxToAdd;
     }
     // overscrolling is not allowed, constrain movement to the boundaries
     else {
-      newCoords.x = this._private.position.x.px + pxToAdd;
+      targetPosition = this._private.position.x.px + pxToAdd;
 
       // check on axis start (left end)
-      if (newCoords.x < boundaries.x.axisStart) {
-        newCoords.x = boundaries.x.axisStart;
+      if (targetPosition < boundaries.x.axisStart) {
+        targetPosition = boundaries.x.axisStart;
       }
       // check on axis end (right end)
-      else if (newCoords.x > boundaries.x.axisEnd) {
-        newCoords.x = boundaries.x.axisEnd;
+      else if (targetPosition > boundaries.x.axisEnd) {
+        targetPosition = boundaries.x.axisEnd;
       }
     }
 
-    this._updateCoords(newCoords);
+    this._updateMoveablePosition(targetPosition);
   }
 
 
@@ -341,11 +340,11 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  _updateCoords(newCoords) {
+  _updateMoveablePosition(newPosition) {
     let position = this._private.position;
 
-    if (newCoords.x !== position.x.px) {
-      position.x.px = newCoords.x;
+    if (newPosition !== position.x.px) {
+      position.x.px = newPosition;
       position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
 
       // NOTE: not sure if this should be inside a RAF, as:
@@ -533,7 +532,7 @@ export default class Spaeti {
     else if (position.x.px > this._private.boundaries.x.axisEnd) {
       bounceTarget = this._private.boundaries.x.axisEnd;
     }
-    // swiper somewhere in the middle
+    // swiper is somewhere in the middle
     else {
       // slide hangs on the left side relative to the container center
       if (Math.abs(this._private.currentSlidePositionX) < this._private.container.width / 2) {
