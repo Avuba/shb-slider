@@ -150,10 +150,10 @@ export default class Spaeti {
       validPosition.x = this._private.boundaries.x.axisEnd;
     }
 
-    if (this._state.isBounceActive) this.bounce.stop();
+    if (this._state.isBounceActive) this.bounce.stopBounce();
 
     if (animateTime) {
-      this.bounce.bounceToTarget({ x: this._private.position.x.px, y: 0 }, validPosition, animateTime);
+      this.bounce.startBounce(this._private.position.x.px, validPosition.x, animateTime);
     }
     else {
       requestAnimationFrame(() => this._updateCoords(validPosition));
@@ -238,7 +238,7 @@ export default class Spaeti {
 
   _onTouchStart() {
     this._state.isTouchActive = true;
-    if (this._state.isBounceActive) this.bounce.stop();
+    if (this._state.isBounceActive) this.bounce.stopBounce();
   }
 
 
@@ -321,7 +321,7 @@ export default class Spaeti {
     // before calculating a target position, we also check:
     // - if the we are in the first or last slide
     // - if the current slide hasn't passed the center point already (momentum won't trigger a
-    // bounceToTargetOnAxis() in this case because a transition to the next slide will happen once
+    // bounceToTarget() in this case because a transition to the next slide will happen once
     // the user lifts his finger)
 
     if (momentum.x.direction > 0 // -1 = moving left
@@ -336,7 +336,7 @@ export default class Spaeti {
     }
 
     if (targetPositionX >= 0) {
-      this.bounce.bounceToTargetOnAxis('x', this._private.position.x.px, targetPositionX);
+      this.bounce.startBounce(this._private.position.x.px, targetPositionX);
     }
   }
 
@@ -485,7 +485,7 @@ export default class Spaeti {
       let targetPositionX = this._getClosestBounceTarget();
 
       if (targetPositionX !== this._private.position.x.px) {
-        this.bounce.bounceToTargetOnAxis('x', this._private.position.x.px, targetPositionX);
+        this.bounce.startBounce(this._private.position.x.px, targetPositionX);
       }
     }
   }

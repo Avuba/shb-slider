@@ -32,7 +32,7 @@ export default class Bounce {
 
     if (config) fUtils.mergeDeep(this._config, config);
 
-    this._bindBounce();
+    this._bindRunBounce();
 
     this.events = events;
     utils.addEventTargetInterface(this);
@@ -42,30 +42,7 @@ export default class Bounce {
   // PUBLIC
 
 
-  bounceToTarget(startPosition, targetPosition, animateTime) {
-    this._startBounceOnAxis(startPosition, targetPosition, animateTime);
-  }
-
-
-  bounceToTargetOnAxis(axis, startPositionOnAxis, targetPositionOnAxis, animateTime) {
-    this._startBounceOnAxis(startPositionOnAxis, targetPositionOnAxis, animateTime);
-  }
-
-
-  stop() {
-    this._stopBounce();
-  }
-
-
-  // LIFECYCLE
-
-
-  _bindBounce() {
-    this._private.boundRunBounce = this._runBounce.bind(this);
-  }
-
-
-  _startBounceOnAxis(startPosition, targetPosition, animateTime) {
+  startBounce(startPosition, targetPosition, animateTime) {
     cancelAnimationFrame(this._private.currentFrame);
 
     if (!this._private.isActive) this.dispatchEvent(new Event(events.bounceStart));
@@ -79,6 +56,19 @@ export default class Bounce {
 
     this._private.currentFrame = requestAnimationFrame(this._private.boundRunBounce);
   }
+
+
+  stopBounce() {
+    if (this._private.isActive) {
+      this._private.isActive = false;
+      this.dispatchEvent(new Event(events.bounceEnd));
+    }
+
+    cancelAnimationFrame(this._private.currentFrame);
+  }
+
+
+  // PRIVATE
 
 
   _runBounce() {
@@ -112,17 +102,12 @@ export default class Bounce {
       this._private.currentFrame = requestAnimationFrame(this._private.boundRunBounce);
     }
     else {
-      this._stopBounce();
+      this.stopBounce();
     }
   }
 
 
-  _stopBounce() {
-    if (this._private.isActive) {
-      this._private.isActive = false;
-      this.dispatchEvent(new Event(events.bounceEnd));
-    }
-
-    cancelAnimationFrame(this._private.currentFrame);
+  _bindRunBounce() {
+    this._private.boundRunBounce = this._runBounce.bind(this);
   }
 }
