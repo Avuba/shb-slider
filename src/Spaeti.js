@@ -289,10 +289,7 @@ export default class Spaeti {
     // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
     let pxToAdd = pushBy.x.px * pushBy.x.direction * -1;
 
-    // OVERSCROLLING IS ALLOWED
-
-    // the further you overscroll, the smaller the displacement; we multiply the displacement
-    // by a linear factor of the overscroll distance
+    // overscrolling is allowed, multiply the displacement by a linear factor of the distance
     if (this._config.overscroll) {
       // check on axis start (left end)
       if (pushBy.x.direction > 0 && this._private.position.x.px < boundaries.x.axisStart) {
@@ -306,9 +303,7 @@ export default class Spaeti {
 
       newCoordinates.x = this._private.position.x.px + pxToAdd;
     }
-
-    // OVERSCROLLING IS NOT ALLOWED
-
+    // overscrolling is not allowed, constrain movement to the boundaries
     else {
       newCoordinates.x = this._private.position.x.px + pxToAdd;
 
@@ -377,7 +372,7 @@ export default class Spaeti {
       position.x.px = newCoordinates.x;
 
       // calculate the percentage. if the moveable is smaller than the container, we skip this and
-      // avoid a division by 0, in which case the percentage will remain unchanged and always be 0
+      // avoid a division by 0, in which case the percentage will remain 0
       if (this._private.boundaries.x.axisEnd > 0) {
         position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
       }
@@ -418,40 +413,30 @@ export default class Spaeti {
   }
 
 
-  _applySlidePosition(slideIndex, position) {
+  _applySingleSlidePosition(slideIndex, position) {
     this._config.slides[slideIndex].style.webkitTransform = `translate3d(${position}px, 0px, 0px)`;
   }
 
 
   _updateSlidePositions() {
     // index of the slide that's currently most visible (> 50%)
-    let updatedSlideIndex = Math.round(this._private.position.x.px / this._private.container.width);
+    let newCurrentSlideIndex = Math.round(this._private.position.x.px / this._private.container.width),
+      shouldSlideBeVisible = {};
 
     // constrain the calculated index when overscrolling
-    if (updatedSlideIndex < 0) {
-      updatedSlideIndex = 0;
+    if (newCurrentSlideIndex < 0) {
+      newCurrentSlideIndex = 0;
     }
-    else if (updatedSlideIndex >= this._config.slides.length) {
-      updatedSlideIndex = this._config.slides.length -1;
-    }
-
-    // the following is necessary because scrolled-out slides can still be left with a bit visible
-    // inside the container area (if the animation is fast); so we detect slide transitions and make
-    // sure the "old" (scrolled-out) slide is pushed off limits and nothing is left hanging out.
-    // this behaviour is present in Android 6 Chrome (at least) but not on iOS 9.3.1 Safari
-    if (updatedSlideIndex > this._private.currentSlideIndex && this._private.currentSlideIndex -1 >= 0) {
-      this._applySlidePosition(this._private.currentSlideIndex -1, this._private.container.width);
-    }
-    else if (updatedSlideIndex < this._private.currentSlideIndex && this._private.currentSlideIndex +1 < this._config.slides.length) {
-      this._applySlidePosition(this._private.currentSlideIndex +1, this._private.container.width);
+    else if (newCurrentSlideIndex >= this._config.slides.length) {
+      newCurrentSlideIndex = this._config.slides.length -1;
     }
 
-    // in case the slide changed, update the previous and current index, send out an event
-    if (updatedSlideIndex !== this._private.currentSlideIndex) {
+    // in case the slide changed, update the previous and current index, send out events
+    if (newCurrentSlideIndex !== this._private.currentSlideIndex) {
       let isSlideChangeStart = this._private.previousSlideIndex < 0;
 
       this._private.previousSlideIndex = this._private.currentSlideIndex;
-      this._private.currentSlideIndex = updatedSlideIndex;
+      this._private.currentSlideIndex = newCurrentSlideIndex;
 
       if (isSlideChangeStart) {
         this.dispatchEvent(new Event(events.slideChangeStart), {
@@ -468,40 +453,40 @@ export default class Spaeti {
 
     // calculate and apply position to the currently most visible (> 50%) slide
     this._private.currentSlidePositionX = this._private.position.x.px - (this._private.currentSlideIndex * this._private.container.width);
-    this._applySlidePosition(this._private.currentSlideIndex, -this._private.currentSlidePositionX);
-    this._state.isSlideVisible[this._private.currentSlideIndex] = true;
+    this._applySingleSlidePosition(this._private.currentSlideIndex, -this._private.currentSlidePositionX);
+    shouldSlideBeVisible[this._private.currentSlideIndex] = true;
 
-    // apply transform to left slide if available and visible, make sure it's hidden otherwise
-    if (this._private.currentSlideIndex > 0) {
+    // apply position to left slide if available and visible
+    if (this._private.currentSlideIndex > 0
+        && this._private.currentSlidePositionX < 0) {
       let leftSlideIndex = this._private.currentSlideIndex - 1;
-
-      if (this._private.currentSlidePositionX < 0) {
-        this._applySlidePosition(leftSlideIndex, -this._private.currentSlidePositionX - this._private.container.width);
-        this._state.isSlideVisible[leftSlideIndex] = true;
-      }
-      else if (this._state.isSlideVisible[leftSlideIndex]) {
-        this._hideSingleSlide(leftSlideIndex);
-      }
+      this._applySingleSlidePosition(leftSlideIndex, -this._private.currentSlidePositionX - this._private.container.width);
+      shouldSlideBeVisible[leftSlideIndex] = true;
     }
 
-    // apply transform to right slide if available and visible, make sure it's hidden otherwise
-    if (this._private.currentSlideIndex < this._config.slides.length -1) {
+    // apply position to right slide if available and visible
+    if (this._private.currentSlideIndex < this._config.slides.length -1
+       && this._private.currentSlidePositionX > 0) {
       let rightSlideIndex = this._private.currentSlideIndex + 1;
-
-      if (this._private.currentSlidePositionX > 0) {
-        this._applySlidePosition(rightSlideIndex, -this._private.currentSlidePositionX + this._private.container.width);
-        this._state.isSlideVisible[rightSlideIndex] = true;
-      }
-      else if (this._state.isSlideVisible[rightSlideIndex]) {
-        this._hideSingleSlide(rightSlideIndex);
-      }
+      this._applySingleSlidePosition(rightSlideIndex, -this._private.currentSlidePositionX + this._private.container.width);
+      shouldSlideBeVisible[rightSlideIndex] = true;
     }
+
+    // make sure that all slides that shouldn't be visible are actually hidden. this is important
+    // as fast finger movements or animations may potentially skip slides
+    fUtils.forEach(this._state.isSlideVisible, (isVisible, slideIndex) => {
+      if (shouldSlideBeVisible[slideIndex]) {
+        this._state.isSlideVisible[slideIndex] = true;
+      } else if (isVisible) {
+        this._hideSingleSlide(slideIndex);
+      }
+    });
   }
 
 
   _hideSingleSlide(slideIndex) {
     // move slide outside of the container
-    this._applySlidePosition(slideIndex, this._private.container.width);
+    this._applySingleSlidePosition(slideIndex, this._private.container.width);
     this._state.isSlideVisible[slideIndex] = false;
   }
 
