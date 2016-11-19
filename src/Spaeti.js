@@ -340,11 +340,9 @@ export default class Spaeti {
 
 
   _updateMoveablePosition(newPosition) {
-    let position = this._private.position;
-
-    if (newPosition !== position.x.px) {
-      position.x.px = newPosition;
-      position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
+    if (newPosition !== this._private.position.x.px) {
+      this._private.position.x.px = newPosition;
+      this._private.position.x.percentage = this._private.position.x.px / this._private.boundaries.x.axisEnd;
 
       // NOTE: not sure if this should be inside a RAF, as:
       // - pushBy gets triggered by a finger movement event (that's already in sync with RAF)
@@ -355,11 +353,11 @@ export default class Spaeti {
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
-          x: position.x.px,
+          x: this._private.position.x.px,
           y: 0
         },
         percentage: {
-          x: position.x.percentage,
+          x: this._private.position.x.percentage,
           y: 0
         }
       });
@@ -488,15 +486,13 @@ export default class Spaeti {
 
   _checkForPositionStable() {
     if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      let position = this._private.position;
-
       this.dispatchEvent(new Event(events.positionStable), {
         position: {
-          x: position.x.px,
+          x: this._private.position.x.px,
           y: 0
         },
         percentage: {
-          x: position.x.percentage,
+          x: this._private.position.x.percentage,
           y: 0
         }
       });
@@ -520,15 +516,14 @@ export default class Spaeti {
 
 
   _getClosestBounceTarget() {
-    let position = this._private.position,
-      bounceTarget = position.x.px;
+    let bounceTarget = this._private.position.x.px;
 
     // swiper is overscrolling left
-    if (position.x.px < this._private.boundaries.x.axisStart) {
+    if (this._private.position.x.px < this._private.boundaries.x.axisStart) {
       bounceTarget = this._private.boundaries.x.axisStart;
     }
     // swiper is overscrolling right
-    else if (position.x.px > this._private.boundaries.x.axisEnd) {
+    else if (this._private.position.x.px > this._private.boundaries.x.axisEnd) {
       bounceTarget = this._private.boundaries.x.axisEnd;
     }
     // swiper is somewhere in the middle
