@@ -12,24 +12,20 @@ let defaults = {
     // array containing the moveable DOM nodes representing each slide
     slides: [],
 
-    // decide what axis to allow scrolling on, gets translated into an array by the class
-    // constructor. NOTE: this class only supports the X axis
-    axis: 'x',
-
     // allow scrolling beyond the edge of moveable
     overscroll: true,
+
+    // when set to true, listens to debounced window.resize events and calls refresh
+    refreshOnResize: true,
 
     // maximum amount of pixels for touch-led overscrolling
     maxTouchOverscroll: 150,
 
-    // how much time (in msec) it takes to bounce back
-    bounceTime: 500,
-
     // the minimum amount of momentum which triggers a transition to the previous/next slide
     minMomentumForTransition: 5,
 
-    // when set to true, listens to debounced window.resize events and calls refresh
-    refreshOnResize: true
+    // param requrid by Bounce class
+    bounceTime: 500,
   },
 
   private: {
@@ -197,9 +193,9 @@ export default class Spaeti {
     });
 
     this._private.boundBounceHandlers = {
-      bounceStartOnAxis: this._onBounceStartOnAxis.bind(this),
-      bounceEndOnAxis: this._onBounceEndOnAxis.bind(this),
-      bounceToPosition: this._onBounceToPosition.bind(this)
+      bounceStart: this._onBounceStart.bind(this),
+      bounceEnd: this._onBounceEnd.bind(this),
+      bounceBy: this._onBounceBy.bind(this)
     };
 
     fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
@@ -254,22 +250,20 @@ export default class Spaeti {
   }
 
 
-  _onBounceStartOnAxis(event) {
-    if (event.data.axis === 'x') this._state.isBounceActive = true;
+  _onBounceStart() {
+    this._state.isBounceActive = true;
   }
 
 
-  _onBounceEndOnAxis(event) {
-    if (event.data.axis === 'x') {
-      this._state.isBounceActive = false;
-      this._checkForSlideChangeEnd();
-      this._checkForPositionStable();
-    }
+  _onBounceEnd() {
+    this._state.isBounceActive = false;
+    this._checkForSlideChangeEnd();
+    this._checkForPositionStable();
   }
 
 
-  _onBounceToPosition(event) {
-    this._updateCoords(event.data);
+  _onBounceBy(event) {
+    this._updateCoords({ x: event.data });
   }
 
 

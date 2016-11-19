@@ -77,7 +77,7 @@ _export.addEventTargetInterface = function(target) {
 
   target.dispatchEvent = (event, data) => {
     if (!(event.type in target.listeners)) return;
-    if (data) event.data = data;
+    if (data !== undefined) event.data = data;
 
     let stack = target.listeners[event.type];
 
