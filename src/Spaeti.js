@@ -165,16 +165,7 @@ export default class Spaeti {
       this.bounce.bounceToTarget({ x: this._private.position.x.px, y: this._private.position.y.px }, validPosition, animateTime);
     }
     else {
-      // if we suddenly "jump" over too many slides, our current slide will remain in its current
-      // visible position, so we need to push it out; the "current" index is passed because the
-      // actual index may have changed when the RAF code gets executed
-      if (Math.abs(validPosition.x - this._private.position.x.px) >= this._private.container.width) {
-        requestAnimationFrame(() => {
-          this._hideSingleSlide(this._private.currentSlideIndex);
-        });
-      }
-
-      this._updateCoords(validPosition);
+      requestAnimationFrame(() => this._updateCoords(validPosition));
 
       // on animated scroll, events happen as result of the animation logic; on an instant scroll,
       // we need to trigger them all here, as the transition is instant
@@ -367,17 +358,17 @@ export default class Spaeti {
   _updateCoords(newCoordinates) {
     let position = this._private.position;
 
-    if (position.x.px !== newCoordinates.x) {
+    if (newCoordinates.x !== position.x.px) {
       // set the current position in pixels
       position.x.px = newCoordinates.x;
+      position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
 
-      // calculate the percentage. if the moveable is smaller than the container, we skip this and
-      // avoid a division by 0, in which case the percentage will remain 0
-      if (this._private.boundaries.x.axisEnd > 0) {
-        position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
-      }
-
-      requestAnimationFrame(() => this._updateSlidePositions());
+      // NOTE: not sure if this should be inside a RAF, as:
+      // - pushBy gets triggered by a finger movement event (that's already in sync with RAF)
+      // - bounceBy already gets executed by a RAF
+      // TODO: test and research
+      // requestAnimationFrame(() => this._updateSlidePositions());
+      this._updateSlidePositions()
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: {
@@ -485,8 +476,9 @@ export default class Spaeti {
 
 
   _hideSingleSlide(slideIndex) {
-    // move slide outside of the container
-    this._applySingleSlidePosition(slideIndex, this._private.container.width);
+    // move slide outside of the container, hide it either on the right or left side depending on
+    // the index of the currently visible slide
+    this._applySingleSlidePosition(slideIndex, slideIndex < this._private.currentSlideIndex ? -this._private.container.width : this._private.container.width);
     this._state.isSlideVisible[slideIndex] = false;
   }
 
