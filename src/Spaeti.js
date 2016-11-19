@@ -59,10 +59,9 @@ let defaults = {
         percentage: 0
       }
     },
-    // stores the relative position of the currently most visible (> 50%) slide, used when
-    // scrolling, esp. to determine which slides to actually move in the DOM, and which position
-    // to bounce to if required
-    currentSlidePositionX: 0,
+    // stores the absolute position of the currently most visible (> 50%) slide, used to determine
+    // what slides to actually move in the DOM and which position to bounce to if required
+    currentSlideAbsolutePosition: 0,
     currentSlideIndex: 0,
     previousSlideIndex: -1
   },
@@ -308,7 +307,7 @@ export default class Spaeti {
 
   _onFinishedTouchWithMomentum(event) {
     let momentum = event.data,
-      targetPositionX;
+      targetPosition;
 
     // only a certain amount of momentum will trigger a slide transition. we only care about
     // momentum on the x axis, as the ShbSwipe only moves along this axis
@@ -322,17 +321,17 @@ export default class Spaeti {
 
     if (momentum.x.direction > 0 // -1 = moving left
         && this._private.currentSlideIndex > 0 // shouldn't be first slide
-        && this._private.currentSlidePositionX < 0) { // check if slide hasn't passed the center
-      targetPositionX = (this._private.currentSlideIndex - 1) * this._private.container.width;
+        && this._private.currentSlideAbsolutePosition < 0) { // check if slide hasn't passed the center
+      targetPosition = (this._private.currentSlideIndex - 1) * this._private.container.width;
     }
     else if (momentum.x.direction < 0 // 1 = moving right
         && this._private.currentSlideIndex < this._config.slides.length -1 // shouldn't be last slide
-        && this._private.currentSlidePositionX > 0) { // check if slide hasn't passed the center
-      targetPositionX = (this._private.currentSlideIndex + 1) * this._private.container.width;
+        && this._private.currentSlideAbsolutePosition > 0) { // check if slide hasn't passed the center
+      targetPosition = (this._private.currentSlideIndex + 1) * this._private.container.width;
     }
 
-    if (targetPositionX >= 0) {
-      this.bounce.startBounce(this._private.position.x.px, targetPositionX);
+    if (targetPosition >= 0) {
+      this.bounce.startBounce(this._private.position.x.px, targetPosition);
     }
   }
 
@@ -402,25 +401,25 @@ export default class Spaeti {
     }
 
     // calculate and apply position to the currently most visible (> 50%) slide
-    this._private.currentSlidePositionX = this._private.position.x.px - (this._private.currentSlideIndex * this._private.container.width);
-    this._applySingleSlidePosition(this._private.currentSlideIndex, -this._private.currentSlidePositionX);
+    this._private.currentSlideAbsolutePosition = this._private.position.x.px - (this._private.currentSlideIndex * this._private.container.width);
+    this._applySingleSlidePosition(this._private.currentSlideIndex, -this._private.currentSlideAbsolutePosition);
     shouldSlideBeVisible[this._private.currentSlideIndex] = true;
 
     // apply position to left slide if available and visible
     if (this._private.currentSlideIndex > 0
-        && this._private.currentSlidePositionX < 0) {
+        && this._private.currentSlideAbsolutePosition < 0) {
       let leftSlideIndex = this._private.currentSlideIndex - 1;
 
-      this._applySingleSlidePosition(leftSlideIndex, -this._private.currentSlidePositionX - this._private.container.width);
+      this._applySingleSlidePosition(leftSlideIndex, -this._private.currentSlideAbsolutePosition - this._private.container.width);
       shouldSlideBeVisible[leftSlideIndex] = true;
     }
 
     // apply position to right slide if available and visible
     if (this._private.currentSlideIndex < this._config.slides.length -1
-       && this._private.currentSlidePositionX > 0) {
+       && this._private.currentSlideAbsolutePosition > 0) {
       let rightSlideIndex = this._private.currentSlideIndex + 1;
 
-      this._applySingleSlidePosition(rightSlideIndex, -this._private.currentSlidePositionX + this._private.container.width);
+      this._applySingleSlidePosition(rightSlideIndex, -this._private.currentSlideAbsolutePosition + this._private.container.width);
       shouldSlideBeVisible[rightSlideIndex] = true;
     }
 
@@ -478,10 +477,10 @@ export default class Spaeti {
 
   _checkForBounceStart() {
     if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      let targetPositionX = this._getClosestBounceTarget();
+      let targetPosition = this._getClosestBounceTarget();
 
-      if (targetPositionX !== this._private.position.x.px) {
-        this.bounce.startBounce(this._private.position.x.px, targetPositionX);
+      if (targetPosition !== this._private.position.x.px) {
+        this.bounce.startBounce(this._private.position.x.px, targetPosition);
       }
     }
   }
@@ -535,7 +534,7 @@ export default class Spaeti {
     // swiper is somewhere in the middle
     else {
       // slide hangs on the left side relative to the container center
-      if (Math.abs(this._private.currentSlidePositionX) < this._private.container.width / 2) {
+      if (Math.abs(this._private.currentSlideAbsolutePosition) < this._private.container.width / 2) {
         bounceTarget = this._private.currentSlideIndex * this._private.container.width;
       }
       // slide hangs on the right side relative to the container center
