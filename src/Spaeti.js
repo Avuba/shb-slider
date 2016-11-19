@@ -72,7 +72,7 @@ let defaults = {
 
   state: {
     isTouchActive: false,
-    isBouncing: false,
+    isBounceActive: false,
     isSlideVisible: {}
   }
 };
@@ -154,7 +154,7 @@ export default class Spaeti {
       validPosition.x = this._private.boundaries.x.axisEnd;
     }
 
-    if (this._state.isBouncing) this.bounce.stop();
+    if (this._state.isBounceActive) this.bounce.stop();
 
     if (animateTime) {
       this.bounce.bounceToTarget({ x: this._private.position.x.px, y: 0 }, validPosition, animateTime);
@@ -186,10 +186,10 @@ export default class Spaeti {
 
   _bindEvents() {
     this._private.boundShbTouchHandlers = {
-      touchStart: this._handleTouchStart.bind(this),
-      touchEnd: this._handleTouchEnd.bind(this),
-      pushBy: this._handlePushBy.bind(this),
-      finishedTouchWithMomentum: this._handleMomentum.bind(this)
+      touchStart: this._onTouchStart.bind(this),
+      touchEnd: this._onTouchEnd.bind(this),
+      pushBy: this._onPushBy.bind(this),
+      finishedTouchWithMomentum: this._onFinishedTouchWithMomentum.bind(this)
     };
 
     fUtils.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
@@ -197,9 +197,9 @@ export default class Spaeti {
     });
 
     this._private.boundBounceHandlers = {
-      bounceStartOnAxis: this._handleBounceStartOnAxis.bind(this),
-      bounceEndOnAxis: this._handleBounceEndOnAxis.bind(this),
-      bounceToPosition: this._handleBounceToPosition.bind(this)
+      bounceStartOnAxis: this._onBounceStartOnAxis.bind(this),
+      bounceEndOnAxis: this._onBounceEndOnAxis.bind(this),
+      bounceToPosition: this._onBounceToPosition.bind(this)
     };
 
     fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
@@ -240,13 +240,13 @@ export default class Spaeti {
   // EVENT HANDLERS
 
 
-  _handleTouchStart() {
+  _onTouchStart() {
     this._state.isTouchActive = true;
-    if (this._state.isBouncing) this.bounce.stop();
+    if (this._state.isBounceActive) this.bounce.stop();
   }
 
 
-  _handleTouchEnd() {
+  _onTouchEnd() {
     this._state.isTouchActive = false;
     this._checkForBounceStart();
     this._checkForSlideChangeEnd();
@@ -254,28 +254,28 @@ export default class Spaeti {
   }
 
 
-  _handleBounceStartOnAxis(event) {
-    if (event.data.axis === 'x') this._state.isBouncing = true;
+  _onBounceStartOnAxis(event) {
+    if (event.data.axis === 'x') this._state.isBounceActive = true;
   }
 
 
-  _handleBounceEndOnAxis(event) {
+  _onBounceEndOnAxis(event) {
     if (event.data.axis === 'x') {
-      this._state.isBouncing = false;
+      this._state.isBounceActive = false;
       this._checkForSlideChangeEnd();
       this._checkForPositionStable();
     }
   }
 
 
-  _handleBounceToPosition(event) {
+  _onBounceToPosition(event) {
     this._updateCoords(event.data);
   }
 
 
-  _handlePushBy(event) {
+  _onPushBy(event) {
     let pushBy = event.data,
-      newCoordinates = {
+      newCoords = {
         x: this._private.position.x.px,
         y: 0
       },
@@ -296,27 +296,27 @@ export default class Spaeti {
         pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
       }
 
-      newCoordinates.x = this._private.position.x.px + pxToAdd;
+      newCoords.x = this._private.position.x.px + pxToAdd;
     }
     // overscrolling is not allowed, constrain movement to the boundaries
     else {
-      newCoordinates.x = this._private.position.x.px + pxToAdd;
+      newCoords.x = this._private.position.x.px + pxToAdd;
 
       // check on axis start (left end)
-      if (newCoordinates.x < boundaries.x.axisStart) {
-        newCoordinates.x = boundaries.x.axisStart;
+      if (newCoords.x < boundaries.x.axisStart) {
+        newCoords.x = boundaries.x.axisStart;
       }
       // check on axis end (right end)
-      else if (newCoordinates.x > boundaries.x.axisEnd) {
-        newCoordinates.x = boundaries.x.axisEnd;
+      else if (newCoords.x > boundaries.x.axisEnd) {
+        newCoords.x = boundaries.x.axisEnd;
       }
     }
 
-    this._updateCoords(newCoordinates);
+    this._updateCoords(newCoords);
   }
 
 
-  _handleMomentum(event) {
+  _onFinishedTouchWithMomentum(event) {
     let momentum = event.data,
       targetPositionX;
 
@@ -350,11 +350,11 @@ export default class Spaeti {
   // DOM MANIPULATION
 
 
-  _updateCoords(newCoordinates) {
+  _updateCoords(newCoords) {
     let position = this._private.position;
 
-    if (newCoordinates.x !== position.x.px) {
-      position.x.px = newCoordinates.x;
+    if (newCoords.x !== position.x.px) {
+      position.x.px = newCoords.x;
       position.x.percentage = position.x.px / this._private.boundaries.x.axisEnd;
 
       // NOTE: not sure if this should be inside a RAF, as:
@@ -487,7 +487,7 @@ export default class Spaeti {
 
 
   _checkForBounceStart() {
-    if (!this._state.isTouchActive && !this._state.isBouncing) {
+    if (!this._state.isTouchActive && !this._state.isBounceActive) {
       let targetPositionX = this._getClosestBounceTarget();
 
       if (targetPositionX !== this._private.position.x.px) {
@@ -498,7 +498,7 @@ export default class Spaeti {
 
 
   _checkForPositionStable() {
-    if (!this._state.isTouchActive && !this._state.isBouncing) {
+    if (!this._state.isTouchActive && !this._state.isBounceActive) {
       let position = this._private.position;
 
       this.dispatchEvent(new Event(events.positionStable), {
@@ -516,7 +516,7 @@ export default class Spaeti {
 
 
   _checkForSlideChangeEnd() {
-    if (!this._state.isBouncing && this._private.previousSlideIndex >= 0) {
+    if (!this._state.isBounceActive && this._private.previousSlideIndex >= 0) {
       this.dispatchEvent(new Event(events.slideChangeEnd), {
         previousIndex: this._private.previousSlideIndex,
         currentIndex: this._private.currentSlideIndex
