@@ -22,10 +22,7 @@ let defaults = {
     maxTouchOverscroll: 150,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
-    minMomentumForTransition: 5,
-
-    // param requrid by Bounce class
-    bounceTime: 500,
+    minMomentumForTransition: 5
   },
 
   private: {
