@@ -1,11 +1,9 @@
+import merge from 'lodash/merge';
 import forEach from 'lodash/forEach';
 import cloneDeep from 'lodash/cloneDeep';
-import defaultsDeep from 'lodash/defaultsDeep';
-import merge from 'lodash/merge';
 
 export default {
+  merge,
   forEach,
-  cloneDeep,
-  defaultsDeep,
-  merge
+  cloneDeep
 };

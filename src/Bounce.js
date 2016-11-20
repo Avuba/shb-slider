@@ -1,5 +1,5 @@
-import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
+import { default as lodash } from './lodash.js';
 
 
 let defaults = {
@@ -30,11 +30,11 @@ let events = {
 
 export default class Bounce {
   constructor(config) {
-    this._config = fUtils.cloneDeep(defaults.config);
-    this._private = fUtils.cloneDeep(defaults.private);
-    this._state = fUtils.cloneDeep(defaults.state);
+    this._config = lodash.cloneDeep(defaults.config);
+    this._private = lodash.cloneDeep(defaults.private);
+    this._state = lodash.cloneDeep(defaults.state);
 
-    if (config) fUtils.mergeDeep(this._config, config);
+    if (config) lodash.merge(this._config, config);
 
     this._bindRunBounce();
 
