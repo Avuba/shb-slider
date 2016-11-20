@@ -12,41 +12,57 @@
       position: absolute;
       left: 0px;
       top: 0px;
-      width: 100%;
+      width: 50%;
       height: 100%;
       background: #eee;
     }
+
+    .container-1 { left: 0px; }
+    .container-2 { left: 50%; }
 
     .slide {
       background: #ccc;
     }
 
-    #slide-1 { background: url('pattern-01.jpg'); }
-    #slide-2 { background: url('pattern-02.jpg'); }
-    #slide-3 { background: url('pattern-03.jpg'); }
-    #slide-4 { background: url('pattern-04.jpg'); }
-    #slide-5 { background: url('pattern-05.jpg'); }
+    .slide-1 { background: url('pattern-01.jpg'); }
+    .slide-2 { background: url('pattern-02.jpg'); }
+    .slide-3 { background: url('pattern-03.jpg'); }
+    .slide-4 { background: url('pattern-04.jpg'); }
+    .slide-5 { background: url('pattern-05.jpg'); }
   </style>
 </head>
 
 <body>
-  <div class="container" id="container">
-    <div class="slide" id="slide-1"></div>
-    <div class="slide" id="slide-2"></div>
-    <div class="slide" id="slide-3"></div>
-    <div class="slide" id="slide-4"></div>
-    <div class="slide" id="slide-5"></div>
+  <div class="container container-1">
+    <div class="slide slide-1"></div>
+    <div class="slide slide-2"></div>
+    <div class="slide slide-3"></div>
+    <div class="slide slide-4"></div>
+    <div class="slide slide-5"></div>
+  </div>
+
+  <div class="container container-2">
+    <div class="slide slide-1"></div>
+    <div class="slide slide-2"></div>
+    <!-- <div class="slide slide-3"></div>
+    <div class="slide slide-4"></div>
+    <div class="slide slide-5"></div> -->
   </div>
 
   <script src="ShbSlider.js" charset="utf-8"></script>
 
   <script type="text/javascript">
-    var shbSlider1 = new ShbSlider({
-      container: document.getElementById('container'),
-      slides: Array.prototype.slice.call(document.getElementsByClassName('slide'))
-    });
+    var container1 = document.getElementsByClassName('container-1')[0],
+      shbSlider1 = new ShbSlider({
+        container: container1,
+        slides: Array.prototype.slice.call(container1.getElementsByClassName('slide'))
+      });
 
-    console.log(shbSlider1);
+    var container2 = document.getElementsByClassName('container-2')[0],
+      shbSlider2 = new ShbSlider({
+        container: container2,
+        slides: Array.prototype.slice.call(container2.getElementsByClassName('slide'))
+      });
 
     // shbSlider1.addEventListener(shbSlider1.events.positionChanged, function(event) {
     //   console.log('positionChanged', event);

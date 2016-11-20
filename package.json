@@ -4,12 +4,13 @@
   "description": "a slider UI element that can be scrolled left/right",
   "scripts": {
     "lint-test": "eslint ./src/** --cache",
-    "lint-fix":  "eslint ./src/** --fix --cache",
+    "lint-fix": "eslint ./src/** --fix --cache",
     "build": "webpack --mode=build",
     "start": "webpack-dev-server --inline --mode=dev --host=0.0.0.0 --port=8080"
   },
   "dependencies": {
-    "kotti": "^0.0.11"
+    "kotti": "^0.0.11",
+    "lodash": "^4.17.2"
   },
   "devDependencies": {
     "babel": "^6.5.2",
@@ -33,8 +34,14 @@
   },
   "author": "Avuba",
   "contributors": [
-      { "name": "Oliver Lukesch", "email": "oliver@avuba.de" },
-      { "name": "Tiago Martins", "email": "tiago@avuba.de" }
+    {
+      "name": "Oliver Lukesch",
+      "email": "oliver@avuba.de"
+    },
+    {
+      "name": "Tiago Martins",
+      "email": "tiago@avuba.de"
+    }
   ],
   "license": "MIT",
   "bugs": {

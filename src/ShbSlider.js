@@ -1,7 +1,8 @@
 import { default as ShbTouch } from '../node_modules/kotti/dist/Kotti.js';
+import { default as Bounce } from './Bounce.js';
 import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
-import { default as Bounce } from './Bounce.js';
+import { default as lodash } from './lodash.js';
 
 
 let defaults = {
@@ -28,7 +29,7 @@ let defaults = {
     axis: 'x',
 
     // NOTE: please take a look at the config objects inside ShbTouch.js and Bounce.js regarding
-    // what other possible parameters can be passed
+    // what other possible config parameters can be passed
 
     // testing
     capture: true,
@@ -79,7 +80,9 @@ export default class ShbSlider {
     this._private = fUtils.cloneDeep(defaults.private);
     this._state = fUtils.cloneDeep(defaults.state);
 
-    if (config) fUtils.mergeDeep(this._config, config);
+    // if (config) fUtils.mergeDeep(this._config, config);
+    if (config) lodash.merge(this._config, config);
+    console.log(this._config);
 
     this.shbTouch = new ShbTouch(this._config);
     this.bounce = new Bounce(this._config);
