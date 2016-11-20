@@ -22,7 +22,10 @@ let defaults = {
     maxTouchOverscroll: 150,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
-    minMomentumForTransition: 5
+    minMomentumForTransition: 5,
+
+    // required to constrain ShbTouch to x axis only
+    axis: 'x'
   },
 
   private: {
