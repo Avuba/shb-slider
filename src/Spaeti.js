@@ -27,40 +27,17 @@ let defaults = {
 
   private: {
     container: {
-      height: 0,
-      width: 0
+      width: 0,
+      height: 0
     },
+    // a purely virtual object acting as if all slides would be combined to one big plane
     moveable: {
+      width: 0, // in pixels
       position: 0, // in pixels
-      progress: 0, // in percent
-      width: 0 // in pixels
+      progress: 0 // in percent
     },
-    // this refers to the "abstract moveable", which has the length of all slides combined. the
-    // values are relative to the upper-left corner of the first slide
-    boundaries: {
-      x: {
-        axisStart: 0,
-        axisEnd: 0
-      },
-      y: {
-        axisStart: 0,
-        axisEnd: 0
-      }
-    },
-    // the position of the "abstract moveable". the values are relative to the upper-left corner of
-    // the first slide
-    position: {
-      x: {
-        px: 0,
-        percentage: 0
-      },
-      y: {
-        px: 0,
-        percentage: 0
-      }
-    },
-    // stores the absolute position of the currently most visible (> 50%) slide, used to determine
-    // what slides to actually move in the DOM and which position to bounce to if required
+    // the absolute position of the currently most visible (> 50%) slide, used to determine what
+    // slides to actually move in the DOM and what position to bounce to if required
     currentSlideAbsolutePosition: 0,
     currentSlideIndex: 0,
     previousSlideIndex: -1
@@ -119,7 +96,7 @@ export default class Spaeti {
       this._calculateParams();
       this._hideAllSlides();
       // restore previous position (in case a window resize event happened)
-      this._private.position.x.px *= this._private.container.width / previousWidth;
+      this._private.moveable.position *= this._private.container.width / previousWidth;
       this._updateSlidePositions();
     });
   }
@@ -140,18 +117,17 @@ export default class Spaeti {
 
 
   scrollTo(targetPosition, animateTime) {
-    // check if coordinates are within bounds, constrain them otherwise
     if (targetPosition < 0) {
       targetPosition = 0;
     }
-    else if (targetPosition > this._private.boundaries.x.axisEnd) {
-      targetPosition = this._private.boundaries.x.axisEnd;
+    else if (targetPosition > this._private.moveable.width) {
+      targetPosition = this._private.moveable.width;
     }
 
     if (this._state.isBounceActive) this.bounce.stopBounce();
 
     if (animateTime) {
-      this.bounce.startBounce(this._private.position.x.px, targetPosition, animateTime);
+      this.bounce.startBounce(this._private.moveable.position, targetPosition, animateTime);
     }
     else {
       requestAnimationFrame(() => this._updateMoveablePosition(targetPosition));
@@ -225,9 +201,7 @@ export default class Spaeti {
   _calculateParams() {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
-
-    this._private.boundaries.x.axisStart = 0;
-    this._private.boundaries.x.axisEnd = this._private.container.width * (this._config.slides.length - 1);
+    this._private.moveable.width = this._private.container.width * (this._config.slides.length - 1);
   }
 
 
@@ -248,27 +222,9 @@ export default class Spaeti {
   }
 
 
-  _onBounceStart() {
-    this._state.isBounceActive = true;
-  }
-
-
-  _onBounceEnd() {
-    this._state.isBounceActive = false;
-    this._checkForSlideChangeEnd();
-    this._checkForPositionStable();
-  }
-
-
-  _onBounceBy(event) {
-    this._updateMoveablePosition(event.data);
-  }
-
-
   _onPushBy(event) {
     let pushBy = event.data,
-      targetPosition = this._private.position.x.px,
-      boundaries = this._private.boundaries;
+      targetPosition = this._private.moveable.position;
 
     // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
     let pxToAdd = pushBy.x.px * pushBy.x.direction * -1;
@@ -276,28 +232,28 @@ export default class Spaeti {
     // overscrolling is allowed, multiply the displacement by a linear factor of the distance
     if (this._config.overscroll) {
       // check on axis start (left end)
-      if (pushBy.x.direction > 0 && this._private.position.x.px < boundaries.x.axisStart) {
-        pxToAdd *= utils.easeLinear(Math.abs(this._private.position.x.px), 1, -1, this._config.maxTouchOverscroll);
+      if (pushBy.x.direction > 0 && this._private.moveable.position < 0) {
+        pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxTouchOverscroll);
       }
       // check on axis end (right end)
-      else if (pushBy.x.direction < 0 && this._private.position.x.px > boundaries.x.axisEnd) {
-        let rightBottom = boundaries.x.axisEnd - this._private.position.x.px;
+      else if (pushBy.x.direction < 0 && this._private.moveable.position > this._private.moveable.width) {
+        let rightBottom = this._private.moveable.width - this._private.moveable.position;
         pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
       }
 
-      targetPosition = this._private.position.x.px + pxToAdd;
+      targetPosition = this._private.moveable.position + pxToAdd;
     }
     // overscrolling is not allowed, constrain movement to the boundaries
     else {
-      targetPosition = this._private.position.x.px + pxToAdd;
+      targetPosition = this._private.moveable.position + pxToAdd;
 
       // check on axis start (left end)
-      if (targetPosition < boundaries.x.axisStart) {
-        targetPosition = boundaries.x.axisStart;
+      if (targetPosition < 0) {
+        targetPosition = 0;
       }
       // check on axis end (right end)
-      else if (targetPosition > boundaries.x.axisEnd) {
-        targetPosition = boundaries.x.axisEnd;
+      else if (targetPosition > this._private.moveable.width) {
+        targetPosition = this._private.moveable.width;
       }
     }
 
@@ -331,8 +287,25 @@ export default class Spaeti {
     }
 
     if (targetPosition >= 0) {
-      this.bounce.startBounce(this._private.position.x.px, targetPosition);
+      this.bounce.startBounce(this._private.moveable.position, targetPosition);
     }
+  }
+
+
+  _onBounceStart() {
+    this._state.isBounceActive = true;
+  }
+
+
+  _onBounceEnd() {
+    this._state.isBounceActive = false;
+    this._checkForSlideChangeEnd();
+    this._checkForPositionStable();
+  }
+
+
+  _onBounceBy(event) {
+    this._updateMoveablePosition(event.data);
   }
 
 
@@ -340,9 +313,9 @@ export default class Spaeti {
 
 
   _updateMoveablePosition(newPosition) {
-    if (newPosition !== this._private.position.x.px) {
-      this._private.position.x.px = newPosition;
-      this._private.position.x.percentage = this._private.position.x.px / this._private.boundaries.x.axisEnd;
+    if (newPosition !== this._private.moveable.position) {
+      this._private.moveable.position = newPosition;
+      this._private.moveable.progress = this._private.moveable.position / this._private.moveable.width;
 
       // NOTE: not sure if this should be inside a RAF, as:
       // - pushBy gets triggered by a finger movement event (that's already in sync with RAF)
@@ -352,14 +325,8 @@ export default class Spaeti {
       this._updateSlidePositions()
 
       this.dispatchEvent(new Event(events.positionChanged), {
-        position: {
-          x: this._private.position.x.px,
-          y: 0
-        },
-        percentage: {
-          x: this._private.position.x.percentage,
-          y: 0
-        }
+        position: this._private.moveable.position,
+        progress: this._private.moveable.progress
       });
     }
   }
@@ -367,7 +334,7 @@ export default class Spaeti {
 
   _updateSlidePositions() {
     // index of the slide that's currently most visible (> 50%)
-    let newCurrentSlideIndex = Math.round(this._private.position.x.px / this._private.container.width),
+    let newCurrentSlideIndex = Math.round(this._private.moveable.position / this._private.container.width),
       shouldSlideBeVisible = {};
 
     // constrain the calculated index when overscrolling
@@ -399,7 +366,7 @@ export default class Spaeti {
     }
 
     // calculate and apply position to the currently most visible (> 50%) slide
-    this._private.currentSlideAbsolutePosition = this._private.position.x.px - (this._private.currentSlideIndex * this._private.container.width);
+    this._private.currentSlideAbsolutePosition = this._private.moveable.position - (this._private.currentSlideIndex * this._private.container.width);
     this._applySingleSlidePosition(this._private.currentSlideIndex, -this._private.currentSlideAbsolutePosition);
     shouldSlideBeVisible[this._private.currentSlideIndex] = true;
 
@@ -477,8 +444,8 @@ export default class Spaeti {
     if (!this._state.isTouchActive && !this._state.isBounceActive) {
       let targetPosition = this._getClosestBounceTarget();
 
-      if (targetPosition !== this._private.position.x.px) {
-        this.bounce.startBounce(this._private.position.x.px, targetPosition);
+      if (targetPosition !== this._private.moveable.position) {
+        this.bounce.startBounce(this._private.moveable.position, targetPosition);
       }
     }
   }
@@ -487,14 +454,8 @@ export default class Spaeti {
   _checkForPositionStable() {
     if (!this._state.isTouchActive && !this._state.isBounceActive) {
       this.dispatchEvent(new Event(events.positionStable), {
-        position: {
-          x: this._private.position.x.px,
-          y: 0
-        },
-        percentage: {
-          x: this._private.position.x.percentage,
-          y: 0
-        }
+        position: this._private.moveable.position,
+        progress: this._private.moveable.progress
       });
     }
   }
@@ -516,15 +477,15 @@ export default class Spaeti {
 
 
   _getClosestBounceTarget() {
-    let bounceTarget = this._private.position.x.px;
+    let bounceTarget = this._private.moveable.position;
 
     // swiper is overscrolling left
-    if (this._private.position.x.px < this._private.boundaries.x.axisStart) {
-      bounceTarget = this._private.boundaries.x.axisStart;
+    if (this._private.moveable.position < 0) {
+      bounceTarget = 0;
     }
     // swiper is overscrolling right
-    else if (this._private.position.x.px > this._private.boundaries.x.axisEnd) {
-      bounceTarget = this._private.boundaries.x.axisEnd;
+    else if (this._private.moveable.position > this._private.moveable.width) {
+      bounceTarget = this._private.moveable.width;
     }
     // swiper is somewhere in the middle
     else {

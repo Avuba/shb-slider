@@ -18,7 +18,7 @@
     }
 
     .slide {
-      background: url('unicorn.jpg');
+      background: #ccc;
     }
 
     #slide-1 { background: url('pattern-01.jpg'); }
@@ -35,22 +35,36 @@
     <div class="slide" id="slide-2"></div>
     <div class="slide" id="slide-3"></div>
     <div class="slide" id="slide-4"></div>
-    <div class="slide" id="slide-5"></div>
+    <!-- <div class="slide" id="slide-5"></div> -->
   </div>
 
   <script src="Spaeti.js" charset="utf-8"></script>
   <script type="text/javascript">
-    // testing
-    var container1 = document.getElementById('container'),
-      slides1 = [];
-
-    for (var i = 1; i <= 5; i++) {
-      slides1.push(document.getElementById('slide-' + i));
-    }
-
     var spaeti1 = new Spaeti({
-      container: container1,
-      slides: slides1
+      container: document.getElementById('container'),
+      slides: Array.prototype.slice.call(document.getElementsByClassName('slide'))
+    });
+
+    console.log(spaeti1);
+
+    // spaeti1.addEventListener(spaeti1.events.positionChanged, function(event) {
+    //   console.log('positionChanged', event);
+    // });
+
+    spaeti1.addEventListener(spaeti1.events.positionStable, function(event) {
+      console.log('positionStable', event);
+    });
+
+    spaeti1.addEventListener(spaeti1.events.slideChange, function(event) {
+      console.log('slideChange', event);
+    });
+
+    spaeti1.addEventListener(spaeti1.events.slideChangeStart, function(event) {
+      console.log('slideChangeStart', event);
+    });
+
+    spaeti1.addEventListener(spaeti1.events.slideChangeEnd, function(event) {
+      console.log('slideChangeEnd', event);
     });
   </script>
 </body>
