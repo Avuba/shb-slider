@@ -25,7 +25,16 @@ let defaults = {
     minMomentumForTransition: 5,
 
     // required to constrain ShbTouch to x axis only
-    axis: 'x'
+    axis: 'x',
+
+    // NOTE: please take a look at the config objects inside ShbTouch.js and Bounce.js regarding
+    // what other possible parameters can be passed
+
+    // testing
+    capture: true,
+
+    // testing
+    lock: true
   },
 
   private: {
@@ -314,6 +323,42 @@ export default class Spaeti {
   }
 
 
+  // CONDITION CHECKERS
+
+
+  _checkForBounceStart() {
+    if (!this._state.isTouchActive && !this._state.isBounceActive) {
+      let targetPosition = this._getClosestBounceTarget();
+
+      if (targetPosition !== this._private.moveable.position) {
+        this.bounce.startBounce(this._private.moveable.position, targetPosition);
+      }
+    }
+  }
+
+
+  _checkForPositionStable() {
+    if (!this._state.isTouchActive && !this._state.isBounceActive) {
+      this.dispatchEvent(new Event(events.positionStable), {
+        position: this._private.moveable.position,
+        progress: this._private.moveable.progress
+      });
+    }
+  }
+
+
+  _checkForSlideChangeEnd() {
+    if (!this._state.isBounceActive && this._private.previousSlideIndex >= 0) {
+      this.dispatchEvent(new Event(events.slideChangeEnd), {
+        previousIndex: this._private.previousSlideIndex,
+        currentIndex: this._private.currentSlideIndex
+      });
+
+      this._private.previousSlideIndex = -1;
+    }
+  }
+
+
   // DOM MANIPULATION
 
 
@@ -327,7 +372,7 @@ export default class Spaeti {
       // - bounceBy already gets executed by a RAF
       // TODO: test and research, especially on Android devices
       // requestAnimationFrame(() => this._updateSlidePositions());
-      this._updateSlidePositions()
+      this._updateSlidePositions();
 
       this.dispatchEvent(new Event(events.positionChanged), {
         position: this._private.moveable.position,
@@ -442,42 +487,6 @@ export default class Spaeti {
   }
 
 
-  // CONDITION CHECKING
-
-
-  _checkForBounceStart() {
-    if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      let targetPosition = this._getClosestBounceTarget();
-
-      if (targetPosition !== this._private.moveable.position) {
-        this.bounce.startBounce(this._private.moveable.position, targetPosition);
-      }
-    }
-  }
-
-
-  _checkForPositionStable() {
-    if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      this.dispatchEvent(new Event(events.positionStable), {
-        position: this._private.moveable.position,
-        progress: this._private.moveable.progress
-      });
-    }
-  }
-
-
-  _checkForSlideChangeEnd() {
-    if (!this._state.isBounceActive && this._private.previousSlideIndex >= 0) {
-      this.dispatchEvent(new Event(events.slideChangeEnd), {
-        previousIndex: this._private.previousSlideIndex,
-        currentIndex: this._private.currentSlideIndex
-      });
-
-      this._private.previousSlideIndex = -1;
-    }
-  }
-
-
   // HELPERS
 
 
@@ -500,7 +509,7 @@ export default class Spaeti {
       }
       // slide hangs on the right side relative to the container center
       else {
-        bounceTarget = (this._private.currentSlideIndex +1) * this._private.container.width;
+        bounceTarget = (this._private.currentSlideIndex + 1) * this._private.container.width;
       }
     }
 
