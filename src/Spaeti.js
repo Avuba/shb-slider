@@ -87,36 +87,12 @@ export default class Spaeti {
   // PUBLIC
 
 
-  refresh(config) {
-    let previousWidth = this._private.container.width;
-
-    if (config) fUtils.mergeDeep(this._config, config);
-
-    requestAnimationFrame(() => {
-      this._calculateParams();
-      this._hideAllSlides();
-      // restore previous position (in case a window resize event happened)
-      this._private.moveable.position *= this._private.container.width / previousWidth;
-      this._updateSlidePositions();
-    });
-  }
-
-
-  destroy() {
-    this._unbindEvents();
-    this.shbTouch.destroy();
-
-    this._config.container = null;
-    this._config.slides = null;
-  }
-
-
   scrollToSlide(slideIndex, animateTime) {
-    this.scrollTo(slideIndex * this._private.container.width, animateTime);
+    this.scrollToPosition(slideIndex * this._private.container.width, animateTime);
   }
 
 
-  scrollTo(targetPosition, animateTime) {
+  scrollToPosition(targetPosition, animateTime) {
     if (targetPosition < 0) {
       targetPosition = 0;
     }
@@ -146,8 +122,33 @@ export default class Spaeti {
   }
 
 
-  freezeScroll(shouldFreeze) {
-    this.shbTouch.setEnabled(!shouldFreeze);
+  disableScrolling(isDisabled) {
+    this.shbTouch.setEnabled(!isDisabled);
+  }
+
+
+  refresh(config) {
+    let previousWidth = this._private.container.width;
+
+    if (config) fUtils.mergeDeep(this._config, config);
+
+    requestAnimationFrame(() => {
+      this._calculateParams();
+      this._hideAllSlides();
+      // restore previous position (in case a window resize event happened)
+      this._private.moveable.position *= this._private.container.width / previousWidth;
+      this._updateSlidePositions();
+    });
+  }
+
+
+  destroy() {
+    this._unbindEvents();
+    this.shbTouch.destroy();
+    this.bounce.stopBounce();
+
+    this._config.container = null;
+    this._config.slides = null;
   }
 
 
