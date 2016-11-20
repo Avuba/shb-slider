@@ -1,7 +1,7 @@
 {
-  "name": "spaeti",
-  "version": "0.0.12",
-  "description": "framework-independent swiper/slides JavaScript UI component",
+  "name": "shb-slider",
+  "version": "0.0.1",
+  "description": "a slider UI element that can be scrolled left/right",
   "scripts": {
     "lint-test": "eslint ./src/** --cache",
     "lint-fix":  "eslint ./src/** --fix --cache",
@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avuba/spaeti.git"
+    "url": "git+https://github.com/avuba/shb-slider.git"
   },
   "author": "Avuba",
   "contributors": [
@@ -38,7 +38,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/avuba/spaeti/issues"
+    "url": "https://github.com/avuba/shb-slider/issues"
   },
-  "homepage": "https://github.com/avuba/spaeti#readme"
+  "homepage": "https://github.com/avuba/shb-slider#readme"
 }

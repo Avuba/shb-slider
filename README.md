@@ -1,2 +1,2 @@
-# shb.ui swipe
-a swiper UI element that can be swiped left/right
+# shb.ui slider
+a slider UI element that can be scrolled left/right

@@ -35,13 +35,13 @@ if (shellArgs.minify === 'true' || shellArgs.minify === true) {
 
 
 module.exports = {
-  entry: './src/Spaeti.js',
+  entry: './src/ShbSlider.js',
   output: {
     path: outputPath,
-    filename: 'Spaeti.js',
+    filename: 'ShbSlider.js',
     // helps exposing library to the window object while still matching AMD /
     // commonJS / etc. requirements: https://github.com/umdjs/umd
-    library: 'Spaeti',
+    library: 'ShbSlider',
     libraryTarget: 'umd',
     umdNamedDefine: true
   },

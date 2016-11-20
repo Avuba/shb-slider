@@ -73,7 +73,7 @@ let events = {
 };
 
 
-export default class Spaeti {
+export default class ShbSlider {
   constructor(config) {
     this._config = fUtils.cloneDeep(defaults.config);
     this._private = fUtils.cloneDeep(defaults.private);
