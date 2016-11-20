@@ -1,7 +1,7 @@
-import { default as ShbTouch } from '../node_modules/kotti/dist/Kotti.js';
-import { default as Bounce } from './Bounce.js';
-import { default as utils } from './utils.js';
-import { default as lodash } from './lodash.js';
+import { default as ShbTouch } from 'kotti/dist/Kotti';
+import { default as Bounce } from './Bounce';
+import { default as utils } from './utils/utils';
+import { default as lodash } from './utils/lodash';
 
 
 let defaults = {

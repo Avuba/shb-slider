@@ -1,5 +1,5 @@
-import { default as utils } from './utils.js';
-import { default as lodash } from './lodash.js';
+import { default as utils } from './utils/utils';
+import { default as lodash } from './utils/lodash';
 
 
 let defaults = {
