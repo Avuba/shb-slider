@@ -1,6 +1,5 @@
 import { default as ShbTouch } from '../node_modules/kotti/dist/Kotti.js';
 import { default as Bounce } from './Bounce.js';
-import { default as fUtils } from './fUtils/index.js';
 import { default as utils } from './utils.js';
 import { default as lodash } from './lodash.js';
 
@@ -177,7 +176,7 @@ export default class ShbSlider {
       finishedTouchWithMomentum: this._onFinishedTouchWithMomentum.bind(this)
     };
 
-    fUtils.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
+    lodash.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
       this.shbTouch.addEventListener(this.shbTouch.events[eventName], handler);
     });
 
@@ -187,7 +186,7 @@ export default class ShbSlider {
       bounceBy: this._onBounceBy.bind(this)
     };
 
-    fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
+    lodash.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
       this.bounce.addEventListener(eventName, handler);
     });
 
@@ -199,11 +198,11 @@ export default class ShbSlider {
 
 
   _unbindEvents() {
-    fUtils.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
+    lodash.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
       this.shbTouch.removeEventListener(this.shbTouch.events[eventName], handler);
     });
 
-    fUtils.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
+    lodash.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
       this.bounce.removeEventListener(eventName, handler);
     });
 
@@ -441,7 +440,7 @@ export default class ShbSlider {
 
     // make sure that all slides that shouldn't be visible are actually hidden. this is important
     // as fast finger movements or animations may potentially skip slides
-    fUtils.forEach(this._state.isSlideVisible, (isVisible, slideIndex) => {
+    lodash.forEach(this._state.isSlideVisible, (isVisible, slideIndex) => {
       if (shouldSlideBeVisible[slideIndex]) {
         this._state.isSlideVisible[slideIndex] = true;
       } else if (isVisible) {
