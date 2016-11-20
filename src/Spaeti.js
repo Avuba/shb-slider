@@ -30,7 +30,8 @@ let defaults = {
       width: 0,
       height: 0
     },
-    // a purely virtual object acting as if all slides would be combined to one big plane
+    // a purely virtual object acting as if all slides would be combined to one big plane. we mainly
+    // manipulate this object and then translate the parameters to actual slide movements
     moveable: {
       width: 0, // in pixels
       position: 0, // in pixels
