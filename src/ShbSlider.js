@@ -76,13 +76,11 @@ let events = {
 
 export default class ShbSlider {
   constructor(config) {
-    this._config = fUtils.cloneDeep(defaults.config);
-    this._private = fUtils.cloneDeep(defaults.private);
-    this._state = fUtils.cloneDeep(defaults.state);
+    this._config = lodash.cloneDeep(defaults.config);
+    this._private = lodash.cloneDeep(defaults.private);
+    this._state = lodash.cloneDeep(defaults.state);
 
-    // if (config) fUtils.mergeDeep(this._config, config);
     if (config) lodash.merge(this._config, config);
-    console.log(this._config);
 
     this.shbTouch = new ShbTouch(this._config);
     this.bounce = new Bounce(this._config);
@@ -146,7 +144,7 @@ export default class ShbSlider {
   refresh(config) {
     let previousWidth = this._private.container.width;
 
-    if (config) fUtils.mergeDeep(this._config, config);
+    if (config) lodash.merge(this._config, config);
 
     requestAnimationFrame(() => {
       this._calculateParams();
