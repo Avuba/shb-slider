@@ -29,12 +29,6 @@ let defaults = {
 
     // NOTE: please take a look at the config objects inside ShbTouch.js and Bounce.js regarding
     // what other possible config parameters can be passed
-
-    // testing
-    capture: true,
-
-    // testing
-    lock: true
   },
 
   private: {
