@@ -46,7 +46,7 @@ export default class Bounce {
   // PUBLIC
 
 
-  startBounce(startPosition, targetPosition, animateTime) {
+  start(startPosition, targetPosition, animateTime) {
     cancelAnimationFrame(this._private.currentFrame);
 
     if (!this._state.isActive) this.dispatchEvent(new Event(events.bounceStart));
@@ -62,7 +62,7 @@ export default class Bounce {
   }
 
 
-  stopBounce() {
+  stop() {
     if (this._state.isActive) {
       this._state.isActive = false;
       this.dispatchEvent(new Event(events.bounceEnd));
@@ -106,7 +106,7 @@ export default class Bounce {
       this._private.currentFrame = requestAnimationFrame(this._private.boundRunBounce);
     }
     else {
-      this.stopBounce();
+      this.stop();
     }
   }
 

@@ -110,10 +110,10 @@ export default class ShbSlider {
       targetPosition = this._private.boundaries.end;
     }
 
-    if (this._state.isBounceActive) this.bounce.stopBounce();
+    if (this._state.isBounceActive) this.bounce.stop();
 
     if (animateTime) {
-      this.bounce.startBounce(this._private.moveable.position, targetPosition, animateTime);
+      this.bounce.start(this._private.moveable.position, targetPosition, animateTime);
     }
     else {
       requestAnimationFrame(() => this._updateMoveablePosition(targetPosition));
@@ -155,7 +155,7 @@ export default class ShbSlider {
   destroy() {
     this._unbindEvents();
     this.shbTouch.destroy();
-    this.bounce.stopBounce();
+    this.bounce.stop();
 
     this._config.container = null;
     this._config.slides = null;
@@ -221,7 +221,7 @@ export default class ShbSlider {
 
   _onTouchStart() {
     this._state.isTouchActive = true;
-    if (this._state.isBounceActive) this.bounce.stopBounce();
+    if (this._state.isBounceActive) this.bounce.stop();
   }
 
 
@@ -298,7 +298,7 @@ export default class ShbSlider {
     }
 
     if (targetPosition >= 0) {
-      this.bounce.startBounce(this._private.moveable.position, targetPosition);
+      this.bounce.start(this._private.moveable.position, targetPosition);
     }
   }
 
@@ -328,7 +328,7 @@ export default class ShbSlider {
       let targetPosition = this._getClosestBounceTarget();
 
       if (targetPosition !== this._private.moveable.position) {
-        this.bounce.startBounce(this._private.moveable.position, targetPosition);
+        this.bounce.start(this._private.moveable.position, targetPosition);
       }
     }
   }
