@@ -356,7 +356,7 @@ export default class ShbSlider {
   }
 
 
-  // DOM MANIPULATION
+  // MOVEMENT AND POSITIONING
 
 
   _updateMoveablePosition(newPosition) {
