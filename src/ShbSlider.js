@@ -36,11 +36,14 @@ let defaults = {
       height: 0
     },
     // a purely virtual object acting as if all slides would be combined to one big plane. we mainly
-    // manipulate this object and then translate the parameters to actual slide movements
+    // manipulate this object and then translate its parameters to the actual slide movements
     moveable: {
-      width: 0, // in pixels
       position: 0, // in pixels
       progress: 0 // in percent
+    },
+    boundaries: {
+      start: 0,
+      end: 0
     },
     // the absolute position of the currently most visible (> 50%) slide, used to determine what
     // slides to actually move in the DOM and what position to bounce to if required
@@ -104,8 +107,8 @@ export default class ShbSlider {
     if (targetPosition < 0) {
       targetPosition = 0;
     }
-    else if (targetPosition > this._private.moveable.width) {
-      targetPosition = this._private.moveable.width;
+    else if (targetPosition > this._private.boundaries.end) {
+      targetPosition = this._private.boundaries.end;
     }
 
     if (this._state.isBounceActive) this.bounce.stopBounce();
@@ -210,7 +213,7 @@ export default class ShbSlider {
   _calculateParams() {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
-    this._private.moveable.width = this._private.container.width * (this._config.slides.length - 1);
+    this._private.boundaries.end = this._private.container.width * (this._config.slides.length - 1);
   }
 
 
@@ -240,14 +243,14 @@ export default class ShbSlider {
 
     // overscrolling is allowed, multiply the displacement by a linear factor of the distance
     if (this._config.overscroll) {
-      // check on axis start (left end)
+      // overscrolling on the left end
       if (pushBy.x.direction > 0 && this._private.moveable.position < 0) {
         pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxTouchOverscroll);
       }
-      // check on axis end (right end)
-      else if (pushBy.x.direction < 0 && this._private.moveable.position > this._private.moveable.width) {
-        let rightBottom = this._private.moveable.width - this._private.moveable.position;
-        pxToAdd *= utils.easeLinear(Math.abs(rightBottom), 1, -1, this._config.maxTouchOverscroll);
+      // overscrolling on the right end
+      else if (pushBy.x.direction < 0 && this._private.moveable.position > this._private.boundaries.end) {
+        let distanceFromRight = this._private.boundaries.end - this._private.moveable.position;
+        pxToAdd *= utils.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxTouchOverscroll);
       }
 
       targetPosition = this._private.moveable.position + pxToAdd;
@@ -256,13 +259,13 @@ export default class ShbSlider {
     else {
       targetPosition = this._private.moveable.position + pxToAdd;
 
-      // check on axis start (left end)
+      // overscrolling on the left end
       if (targetPosition < 0) {
         targetPosition = 0;
       }
-      // check on axis end (right end)
-      else if (targetPosition > this._private.moveable.width) {
-        targetPosition = this._private.moveable.width;
+      // overscrolling on the right end
+      else if (targetPosition > this._private.boundaries.end) {
+        targetPosition = this._private.boundaries.end;
       }
     }
 
@@ -360,7 +363,7 @@ export default class ShbSlider {
   _updateMoveablePosition(newPosition) {
     if (newPosition !== this._private.moveable.position) {
       this._private.moveable.position = newPosition;
-      this._private.moveable.progress = this._private.moveable.position / this._private.moveable.width;
+      this._private.moveable.progress = this._private.moveable.position / this._private.boundaries.end;
 
       // NOTE: not sure if this should be inside a RAF, as:
       // - pushBy gets triggered by a finger movement event (that's already in sync with RAF)
@@ -493,8 +496,8 @@ export default class ShbSlider {
       bounceTarget = 0;
     }
     // swiper is overscrolling right
-    else if (this._private.moveable.position > this._private.moveable.width) {
-      bounceTarget = this._private.moveable.width;
+    else if (this._private.moveable.position > this._private.boundaries.end) {
+      bounceTarget = this._private.boundaries.end;
     }
     // swiper is somewhere in the middle
     else {
