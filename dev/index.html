@@ -55,16 +55,14 @@
       shbSlider1 = new ShbSlider({
         container: container1,
         slides: Array.prototype.slice.call(container1.getElementsByClassName('slide')),
-        capture: true,
-        lock: true
+        preventDefault: true
       });
 
     var container2 = document.getElementsByClassName('container-2')[0],
       shbSlider2 = new ShbSlider({
         container: container2,
         slides: Array.prototype.slice.call(container2.getElementsByClassName('slide')),
-        capture: true,
-        lock: true
+        preventDefault: true
       });
 
     // shbSlider1.addEventListener(shbSlider1.events.positionChanged, function(event) {

@@ -1,4 +1,7 @@
-import { default as ShbTouch } from 'kotti/dist/Kotti';
+// TODO:
+// import { default as ShbTouch } from 'kotti/dist/Kotti';
+import { default as ShbTouch } from './vendor/ShbTouch';
+
 import { default as Bounce } from './Bounce';
 import { default as utils } from './utils/utils';
 import { default as lodash } from './utils/lodash';
@@ -23,9 +26,6 @@ let defaults = {
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
     minMomentumForTransition: 5,
-
-    // required to constrain ShbTouch to x axis only
-    axis: 'x',
 
     // NOTE: please take a look at the config objects inside ShbTouch.js and Bounce.js regarding
     // what other possible config parameters can be passed
@@ -74,6 +74,8 @@ export default class ShbSlider {
     this._state = lodash.cloneDeep(defaults.state);
 
     if (config) lodash.merge(this._config, config);
+    // required to constrain ShbTouch to x axis only
+    this._config.axis = 'x';
 
     this.shbTouch = new ShbTouch(this._config);
     this.bounce = new Bounce(this._config);
@@ -130,7 +132,7 @@ export default class ShbSlider {
 
 
   disableScrolling(isDisabled) {
-    this.shbTouch.setEnabled(!isDisabled);
+    this.shbTouch.disableScrolling(isDisabled);
   }
 
 
@@ -167,11 +169,11 @@ export default class ShbSlider {
       touchStart: this._onTouchStart.bind(this),
       touchEnd: this._onTouchEnd.bind(this),
       pushBy: this._onPushBy.bind(this),
-      finishedTouchWithMomentum: this._onFinishedTouchWithMomentum.bind(this)
+      touchEndWithMomentum: this._onTouchEndWithMomentum.bind(this)
     };
 
     lodash.forEach(this._private.boundShbTouchHandlers, (handler, eventName) => {
-      this.shbTouch.addEventListener(this.shbTouch.events[eventName], handler);
+      this.shbTouch.addEventListener(eventName, handler);
     });
 
     this._private.boundBounceHandlers = {
@@ -269,7 +271,7 @@ export default class ShbSlider {
   }
 
 
-  _onFinishedTouchWithMomentum(event) {
+  _onTouchEndWithMomentum(event) {
     let momentum = event.data,
       targetPosition;
 
