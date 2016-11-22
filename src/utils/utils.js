@@ -91,8 +91,7 @@ _export.addEventTargetInterface = function(target) {
 /**
  * get debounced function
  */
-_export.getDebounced = function(callback, duration) {
-  duration = duration || 250;
+_export.getDebounced = function(callback, duration = 250) {
   let timeout;
 
   return function() {
