@@ -1,9 +1,8 @@
-// TODO: import via npm as soon as available
-import { default as ShbTouch } from './vendor/ShbTouch';
-
-import { default as Bounce } from './Bounce';
 import { default as utils } from './utils/utils';
 import { default as lodash } from './utils/lodash';
+// TODO: import via npm as soon as available
+import { default as ShbTouch } from './vendor/ShbTouch';
+import { default as Bounce } from './Bounce';
 
 
 let defaults = {
