@@ -155,6 +155,7 @@ export default class ShbSlider {
   destroy() {
     this._unbindEvents();
     this.shbTouch.destroy();
+
     this.bounce.stop();
 
     this._config.container = null;
@@ -168,8 +169,8 @@ export default class ShbSlider {
   _bindEvents() {
     this._private.boundShbTouchHandlers = {
       touchStart: this._onTouchStart.bind(this),
+      touchPush: this._onPush.bind(this),
       touchEnd: this._onTouchEnd.bind(this),
-      pushBy: this._onPushBy.bind(this),
       touchEndWithMomentum: this._onTouchEndWithMomentum.bind(this)
     };
 
@@ -179,8 +180,8 @@ export default class ShbSlider {
 
     this._private.boundBounceHandlers = {
       bounceStart: this._onBounceStart.bind(this),
-      bounceEnd: this._onBounceEnd.bind(this),
-      bounceBy: this._onBounceBy.bind(this)
+      bouncePush: this._onBouncePush.bind(this),
+      bounceEnd: this._onBounceEnd.bind(this)
     };
 
     lodash.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
@@ -233,7 +234,7 @@ export default class ShbSlider {
   }
 
 
-  _onPushBy(event) {
+  _onPush(event) {
     let pushBy = event.data,
       targetPosition = this._private.moveable.position;
 
@@ -315,7 +316,7 @@ export default class ShbSlider {
   }
 
 
-  _onBounceBy(event) {
+  _onBouncePush(event) {
     this._updateMoveablePosition(event.data);
   }
 
