@@ -23,7 +23,7 @@ let defaults = {
 
 let events = {
   bounceStart: 'bounceStart',
-  bouncePush: 'bouncePush',
+  bouncePositionChange: 'bouncePositionChange',
   bounceEnd: 'bounceEnd'
 };
 
@@ -97,7 +97,7 @@ export default class Bounce {
         shouldBounceEnd = true;
       }
 
-      this.dispatchEvent(new Event(events.bouncePush), this._private.currentPosition);
+      this.dispatchEvent(new Event(events.bouncePositionChange), this._private.currentPosition);
     }
 
     // check for this._state.isActive in addition to shouldBounceEnd as a fail-safe in case the

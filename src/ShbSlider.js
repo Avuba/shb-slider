@@ -180,7 +180,7 @@ export default class ShbSlider {
 
     this._private.boundBounceHandlers = {
       bounceStart: this._onBounceStart.bind(this),
-      bouncePush: this._onBouncePush.bind(this),
+      bouncePositionChange: this._onBouncePositionChange.bind(this),
       bounceEnd: this._onBounceEnd.bind(this)
     };
 
@@ -226,14 +226,6 @@ export default class ShbSlider {
   }
 
 
-  _onTouchEnd() {
-    this._state.isTouchActive = false;
-    this._checkForBounceStart();
-    this._checkForSlideChangeEnd();
-    this._checkForPositionStable();
-  }
-
-
   _onPush(event) {
     let pushBy = event.data,
       targetPosition = this._private.moveable.position;
@@ -274,6 +266,14 @@ export default class ShbSlider {
   }
 
 
+  _onTouchEnd() {
+    this._state.isTouchActive = false;
+    this._checkForBounceStart();
+    this._checkForSlideChangeEnd();
+    this._checkForPositionStable();
+  }
+  
+
   _onTouchEndWithMomentum(event) {
     let momentum = event.data,
       targetPosition;
@@ -310,15 +310,15 @@ export default class ShbSlider {
   }
 
 
+  _onBouncePositionChange(event) {
+    this._updateMoveablePosition(event.data);
+  }
+
+
   _onBounceEnd() {
     this._state.isBounceActive = false;
     this._checkForSlideChangeEnd();
     this._checkForPositionStable();
-  }
-
-
-  _onBouncePush(event) {
-    this._updateMoveablePosition(event.data);
   }
 
 
