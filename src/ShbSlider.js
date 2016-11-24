@@ -13,10 +13,10 @@ let defaults = {
     // array containing the moveable DOM nodes representing each slide
     slides: [],
 
-    // allow scrolling beyond the edge of moveable
+    // allow scrolling beyond the edge of the container
     overscroll: true,
 
-    // when set to true, listens to debounced window.resize events and calls refresh
+    // allow listening to the debounced window.resize event and call refresh
     refreshOnResize: true,
 
     // maximum amount of pixels for overscrolling
@@ -272,7 +272,7 @@ export default class ShbSlider {
     this._checkForSlideChangeEnd();
     this._checkForPositionStable();
   }
-  
+
 
   _onTouchEndWithMomentum(event) {
     let momentum = event.data,
