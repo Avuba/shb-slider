@@ -19,8 +19,8 @@ let defaults = {
     // when set to true, listens to debounced window.resize events and calls refresh
     refreshOnResize: true,
 
-    // maximum amount of pixels for touch-led overscrolling
-    maxTouchOverscroll: 150,
+    // maximum amount of pixels for overscrolling
+    maxOverscroll: 150,
 
     // the minimum amount of momentum which triggers a transition to the previous/next slide
     minMomentumForTransition: 5,
@@ -241,16 +241,17 @@ export default class ShbSlider {
     // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
     let pxToAdd = pushBy.x.px * pushBy.x.direction * -1;
 
-    // overscrolling is allowed, multiply the displacement by a linear factor of the distance
+    // if overscrolling is allowed, reduce the push by a linear factor of the distance. the
+    // further the overscroll, the smaller the push
     if (this._config.overscroll) {
       // overscrolling on the left end
       if (pushBy.x.direction > 0 && this._private.moveable.position < 0) {
-        pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxTouchOverscroll);
+        pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxOverscroll);
       }
       // overscrolling on the right end
       else if (pushBy.x.direction < 0 && this._private.moveable.position > this._private.boundaries.end) {
         let distanceFromRight = this._private.boundaries.end - this._private.moveable.position;
-        pxToAdd *= utils.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxTouchOverscroll);
+        pxToAdd *= utils.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxOverscroll);
       }
 
       targetPosition = this._private.moveable.position + pxToAdd;
@@ -325,35 +326,32 @@ export default class ShbSlider {
 
 
   _checkForBounceStart() {
-    if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      let targetPosition = this._getClosestBounceTarget();
+    if (this._state.isTouchActive || this._state.isBounceActive) return;
 
-      if (targetPosition !== this._private.moveable.position) {
-        this.bounce.start(this._private.moveable.position, targetPosition);
-      }
-    }
+    let targetPosition = this._getClosestBounceTarget();
+
+    if (targetPosition === this._private.moveable.position) return;
+
+    this.bounce.start(this._private.moveable.position, targetPosition);
   }
 
 
   _checkForPositionStable() {
-    if (!this._state.isTouchActive && !this._state.isBounceActive) {
-      this.dispatchEvent(new Event(events.positionStable), {
-        position: this._private.moveable.position,
-        progress: this._private.moveable.progress
-      });
-    }
+    if (this._state.isTouchActive || this._state.isBounceActive) return;
+
+    this.dispatchEvent(new Event(events.positionStable), lodash.cloneDeep(this._private.moveable));
   }
 
 
   _checkForSlideChangeEnd() {
-    if (!this._state.isBounceActive && this._private.previousSlideIndex >= 0) {
-      this.dispatchEvent(new Event(events.slideChangeEnd), {
-        previousIndex: this._private.previousSlideIndex,
-        currentIndex: this._private.currentSlideIndex
-      });
+    if (this._state.isBounceActive || this._private.previousSlideIndex < 0) return;
 
-      this._private.previousSlideIndex = -1;
-    }
+    this.dispatchEvent(new Event(events.slideChangeEnd), {
+      previousIndex: this._private.previousSlideIndex,
+      currentIndex: this._private.currentSlideIndex
+    });
+
+    this._private.previousSlideIndex = -1;
   }
 
 
