@@ -36,7 +36,7 @@ export default class Bounce {
 
     if (config) lodash.merge(this._config, config);
 
-    this._bindRunBounce();
+    this._private.boundRunBounce = this._runBounce.bind(this);
 
     this.events = events;
     utils.addEventTargetInterface(this);
@@ -83,7 +83,7 @@ export default class Bounce {
 
       // we test the passed time instead of the position as:
       // - exponential functions never really cross the target
-      // - some ease functions will cross the axes (spring-like effect).
+      // - some ease functions will cross the axes (spring-like effect)
       if (timePassed < this._private.animateTime) {
         this._private.currentPosition = utils.easeOutCubic(
           timePassed,
@@ -108,10 +108,5 @@ export default class Bounce {
     else {
       this.stop();
     }
-  }
-
-
-  _bindRunBounce() {
-    this._private.boundRunBounce = this._runBounce.bind(this);
   }
 }
