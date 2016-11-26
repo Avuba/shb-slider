@@ -63,7 +63,7 @@ let events = {
   slideChange: 'slideChange',
   slideChangeStart: 'slideChangeStart',
   slideChangeEnd: 'slideChangeEnd',
-  positionChanged: 'positionChanged',
+  positionChange: 'positionChange',
   positionStable: 'positionStable'
 };
 
@@ -97,26 +97,24 @@ export default class ShbSlider {
   // PUBLIC
 
 
-  scrollToSlide(slideIndex, animateTime) {
-    this.scrollToPosition(slideIndex * this._private.container.width, animateTime);
-  }
-
-
-  scrollToPosition(targetPosition, animateTime) {
-    if (targetPosition < 0) {
-      targetPosition = 0;
-    }
-    else if (targetPosition > this._private.boundaries.end) {
-      targetPosition = this._private.boundaries.end;
-    }
-
+  slideTo(slideIndex, animateTime) {
+    if (slideIndex === this._private.currentIndex) return;
     if (this._state.isBounceActive) this.bounce.stop();
 
+    let newPosition = slideIndex * this._private.container.width;
+
+    if (newPosition < 0) {
+      newPosition = 0;
+    }
+    else if (newPosition > this._private.boundaries.end) {
+      newPosition = this._private.boundaries.end;
+    }
+
     if (animateTime) {
-      this.bounce.start(this._private.moveable.position, targetPosition, animateTime);
+      this.bounce.start(this._private.moveable.position, newPosition, animateTime);
     }
     else {
-      requestAnimationFrame(() => this._updateMoveablePosition(targetPosition));
+      requestAnimationFrame(() => this._updateMoveablePosition(newPosition));
 
       // on animated scroll, events happen as result of the animation logic; on an instant scroll,
       // we need to trigger them all here, as the transition is instant
@@ -245,7 +243,7 @@ export default class ShbSlider {
 
   _onPush(event) {
     let pushBy = event.data,
-      targetPosition = this._private.moveable.position;
+      newPosition = this._private.moveable.position;
 
     // directions obtained from ShbTouch are negative, ShbSwipe works with positive coordinates
     let pxToAdd = pushBy.x.px * pushBy.x.direction * -1;
@@ -263,23 +261,23 @@ export default class ShbSlider {
         pxToAdd *= utils.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxOverscroll);
       }
 
-      targetPosition = this._private.moveable.position + pxToAdd;
+      newPosition = this._private.moveable.position + pxToAdd;
     }
     // overscrolling is not allowed, constrain movement to the boundaries
     else {
-      targetPosition = this._private.moveable.position + pxToAdd;
+      newPosition = this._private.moveable.position + pxToAdd;
 
       // overscrolling on the left end
-      if (targetPosition < 0) {
-        targetPosition = 0;
+      if (newPosition < 0) {
+        newPosition = 0;
       }
       // overscrolling on the right end
-      else if (targetPosition > this._private.boundaries.end) {
-        targetPosition = this._private.boundaries.end;
+      else if (newPosition > this._private.boundaries.end) {
+        newPosition = this._private.boundaries.end;
       }
     }
 
-    this._updateMoveablePosition(targetPosition);
+    this._updateMoveablePosition(newPosition);
   }
 
 
@@ -293,7 +291,7 @@ export default class ShbSlider {
 
   _onTouchEndWithMomentum(event) {
     let momentum = event.data,
-      targetPosition;
+      newPosition;
 
     // only a certain amount of momentum will trigger a slide transition. we only care about
     // momentum on the x axis, as the ShbSwipe only moves along this axis
@@ -308,16 +306,16 @@ export default class ShbSlider {
     if (momentum.x.direction > 0 // -1 = moving left
         && this._private.currentSlideIndex > 0 // shouldn't be first slide
         && this._private.currentSlideAbsolutePosition < 0) { // check if slide hasn't passed the center
-      targetPosition = (this._private.currentSlideIndex - 1) * this._private.container.width;
+      newPosition = (this._private.currentSlideIndex - 1) * this._private.container.width;
     }
     else if (momentum.x.direction < 0 // 1 = moving right
         && this._private.currentSlideIndex < this._config.slides.length -1 // shouldn't be last slide
         && this._private.currentSlideAbsolutePosition > 0) { // check if slide hasn't passed the center
-      targetPosition = (this._private.currentSlideIndex + 1) * this._private.container.width;
+      newPosition = (this._private.currentSlideIndex + 1) * this._private.container.width;
     }
 
-    if (targetPosition >= 0) {
-      this.bounce.start(this._private.moveable.position, targetPosition);
+    if (newPosition >= 0) {
+      this.bounce.start(this._private.moveable.position, newPosition);
     }
   }
 
@@ -345,11 +343,11 @@ export default class ShbSlider {
   _checkForBounceStart() {
     if (this._state.isTouchActive || this._state.isBounceActive) return;
 
-    let targetPosition = this._getClosestBounceTarget();
+    let newPosition = this._getClosestBounceTarget();
 
-    if (targetPosition === this._private.moveable.position) return;
+    if (newPosition === this._private.moveable.position) return;
 
-    this.bounce.start(this._private.moveable.position, targetPosition);
+    this.bounce.start(this._private.moveable.position, newPosition);
   }
 
 
@@ -376,22 +374,13 @@ export default class ShbSlider {
 
 
   _updateMoveablePosition(newPosition) {
-    if (newPosition !== this._private.moveable.position) {
-      this._private.moveable.position = newPosition;
-      this._private.moveable.progress = this._private.moveable.position / this._private.boundaries.end;
+    if (newPosition === this._private.moveable.position) return;
 
-      // NOTE: not sure if this should be inside a RAF, as:
-      // - pushBy gets triggered by a finger movement event (that's already in sync with RAF)
-      // - bounceBy already gets executed by a RAF
-      // TODO: test and research, especially on Android devices
-      // requestAnimationFrame(() => this._updateSlidePositions());
-      this._updateSlidePositions();
+    this._private.moveable.position = newPosition;
+    this._private.moveable.progress = this._private.moveable.position / this._private.boundaries.end;
 
-      this.dispatchEvent(new Event(events.positionChanged), {
-        position: this._private.moveable.position,
-        progress: this._private.moveable.progress
-      });
-    }
+    this._updateSlidePositions();
+    this.dispatchEvent(new Event(events.positionChange), lodash.cloneDeep(this._private.moveable));
   }
 
 

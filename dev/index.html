@@ -65,25 +65,25 @@
         preventDefault: true
       });
 
-    // shbSlider1.addEventListener(shbSlider1.events.positionChanged, function(event) {
-    //   console.log('positionChanged', event);
+    // shbSlider1.addEventListener(shbSlider1.events.positionChange, function(event) {
+    //   console.log('positionChange', event);
     // });
     //
     // shbSlider1.addEventListener(shbSlider1.events.positionStable, function(event) {
     //   console.log('positionStable', event);
     // });
-    //
-    // shbSlider1.addEventListener(shbSlider1.events.slideChange, function(event) {
-    //   console.log('slideChange', event);
-    // });
-    //
-    // shbSlider1.addEventListener(shbSlider1.events.slideChangeStart, function(event) {
-    //   console.log('slideChangeStart', event);
-    // });
-    //
-    // shbSlider1.addEventListener(shbSlider1.events.slideChangeEnd, function(event) {
-    //   console.log('slideChangeEnd', event);
-    // });
+
+    shbSlider1.addEventListener(shbSlider1.events.slideChange, function(event) {
+      console.log('slideChange', event);
+    });
+
+    shbSlider1.addEventListener(shbSlider1.events.slideChangeStart, function(event) {
+      console.log('slideChangeStart', event);
+    });
+
+    shbSlider1.addEventListener(shbSlider1.events.slideChangeEnd, function(event) {
+      console.log('slideChangeEnd', event);
+    });
   </script>
 </body>
 </html>
