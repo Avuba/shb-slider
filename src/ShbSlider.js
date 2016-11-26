@@ -210,6 +210,23 @@ export default class ShbSlider {
   }
 
 
+  _setupDomElements() {
+    // attributes requried by the container
+    this._config.container.style.overflow = 'hidden';
+
+    // attributes requried by the slides
+    this._config.slides.forEach((slide) => {
+      slide.style.position = 'absolute';
+      slide.style.left = '0px';
+      slide.style.top = '0px';
+      slide.style.webkitTransform = 'translate3d(0px, 0px, 0px)';
+      slide.style.width = '100%';
+      slide.style.height = '100%';
+      slide.style.willChange = 'transform';
+    });
+  }
+
+
   _calculateParams() {
     this._private.container.width = this._config.container.clientWidth;
     this._private.container.height = this._config.container.clientHeight;
@@ -463,23 +480,6 @@ export default class ShbSlider {
 
   _hideAllSlides() {
     this._config.slides.forEach((slide, slideIndex) => this._hideSingleSlide(slideIndex));
-  }
-
-
-  _setupDomElements() {
-    // attributes requried by the container
-    this._config.container.style.overflow = 'hidden';
-
-    // attributes requried by the slides
-    this._config.slides.forEach((slide) => {
-      slide.style.position = 'absolute';
-      slide.style.left = '0px';
-      slide.style.top = '0px';
-      slide.style.webkitTransform = 'translate3d(0px, 0px, 0px)';
-      slide.style.width = '100%';
-      slide.style.height = '100%';
-      slide.style.willChange = 'transform';
-    });
   }
 
 
