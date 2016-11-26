@@ -28,28 +28,6 @@ _export.stopEvent = function(event) {
 
 
 /**
-  * @param {Number} t : the current time
-  * @param {Number} b : the start value
-  * @param {Number} c : the change in value
-  * @param {Number} d : the duration time
-  */
-_export.easeLinear = function(t, b, c, d) {
-  return c*t/d + b;
-};
-
-
-/**
-  * @param {Number} t : the current time
-  * @param {Number} b : the start value
-  * @param {Number} c : the change in value
-  * @param {Number} d : the duration time
-  */
-_export.easeOutCubic = function (t, b, c, d) {
-  return c*((t=t/d-1)*t*t + 1) + b;
-};
-
-
-/**
  * adds the EventTarget interface to an object
  */
 _export.addEventTargetInterface = function(target) {

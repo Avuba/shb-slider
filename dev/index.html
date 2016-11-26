@@ -66,23 +66,19 @@
       });
 
     // shbSlider1.addEventListener(shbSlider1.events.positionChange, function(event) {
-    //   console.log('positionChange', event);
+    //   console.log('positionChange', event.data);
     // });
     //
     // shbSlider1.addEventListener(shbSlider1.events.positionStable, function(event) {
-    //   console.log('positionStable', event);
+    //   console.log('positionStable', event.data);
     // });
 
     shbSlider1.addEventListener(shbSlider1.events.slideChange, function(event) {
-      console.log('slideChange', event);
-    });
-
-    shbSlider1.addEventListener(shbSlider1.events.slideChangeStart, function(event) {
-      console.log('slideChangeStart', event);
+      console.log('slideChange', event.data);
     });
 
     shbSlider1.addEventListener(shbSlider1.events.slideChangeEnd, function(event) {
-      console.log('slideChangeEnd', event);
+      console.log('slideChangeEnd', event.data);
     });
   </script>
 </body>

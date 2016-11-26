@@ -1,8 +1,9 @@
 import { default as utils } from './utils/utils';
+import { default as ease } from './utils/ease';
 import { default as lodash } from './utils/lodash';
 // TODO: import via npm as soon as available
 import { default as ShbTouch } from './vendor/ShbTouch';
-import { default as Bounce } from './Bounce';
+import { default as Animate } from './Animate';
 
 
 let defaults = {
@@ -48,12 +49,12 @@ let defaults = {
     // slides to actually move in the DOM and what position to bounce to if required
     currentSlideAbsolutePosition: 0,
     currentSlideIndex: 0,
-    previousSlideIndex: -1
+    previousSlideIndex: 0
   },
 
   state: {
     isTouchActive: false,
-    isBounceActive: false,
+    isAnimateActive: false,
     isSlideVisible: {}
   }
 };
@@ -61,7 +62,6 @@ let defaults = {
 
 let events = {
   slideChange: 'slideChange',
-  slideChangeStart: 'slideChangeStart',
   slideChangeEnd: 'slideChangeEnd',
   positionChange: 'positionChange',
   positionStable: 'positionStable'
@@ -79,7 +79,7 @@ export default class ShbSlider {
     this._config.axis = 'x';
 
     this.shbTouch = new ShbTouch(this._config);
-    this.bounce = new Bounce(this._config);
+    this.animate = new Animate(this._config);
 
     this.events = events;
     utils.addEventTargetInterface(this);
@@ -99,7 +99,7 @@ export default class ShbSlider {
 
   slideTo(slideIndex, animateTime) {
     if (slideIndex === this._private.currentIndex) return;
-    if (this._state.isBounceActive) this.bounce.stop();
+    if (this._state.isAnimateActive) this.animate.stop();
 
     let newPosition = slideIndex * this._private.container.width;
 
@@ -111,21 +111,14 @@ export default class ShbSlider {
     }
 
     if (animateTime) {
-      this.bounce.start(this._private.moveable.position, newPosition, animateTime);
+      this.animate.start(this._private.moveable.position, newPosition, animateTime, 'easeInOutCubic');
     }
     else {
-      requestAnimationFrame(() => this._updateMoveablePosition(newPosition));
-
-      // on animated scroll, events happen as result of the animation logic; on an instant scroll,
-      // we need to trigger them all here, as the transition is instant
-      let eventData = {
-        previousIndex: this._private.previousSlideIndex,
-        currentIndex: this._private.currentSlideIndex
-      };
-
-      this.dispatchEvent(new Event(events.slideChangeStart), eventData);
-      this.dispatchEvent(new Event(events.slideChange), eventData);
-      this.dispatchEvent(new Event(events.slideChangeEnd), eventData);
+      requestAnimationFrame(() => {
+        this._updateMoveablePosition(newPosition);
+        this._checkForSlideChangeEnd();
+        this._checkForPositionStable();
+      });
     }
   }
 
@@ -154,7 +147,7 @@ export default class ShbSlider {
     this._unbindEvents();
     this.shbTouch.destroy();
 
-    this.bounce.stop();
+    this.animate.stop();
 
     this._config.container = null;
     this._config.slides = null;
@@ -176,14 +169,14 @@ export default class ShbSlider {
       this.shbTouch.addEventListener(eventName, handler);
     });
 
-    this._private.boundBounceHandlers = {
-      bounceStart: this._onBounceStart.bind(this),
-      bouncePositionChange: this._onBouncePositionChange.bind(this),
-      bounceEnd: this._onBounceEnd.bind(this)
+    this._private.boundAnimateHandlers = {
+      animateStart: this._onAnimateStart.bind(this),
+      animatePositionChange: this._onAnimatePositionChange.bind(this),
+      animateEnd: this._onAnimateEnd.bind(this)
     };
 
-    lodash.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
-      this.bounce.addEventListener(eventName, handler);
+    lodash.forEach(this._private.boundAnimateHandlers, (handler, eventName) => {
+      this.animate.addEventListener(eventName, handler);
     });
 
     if (this._config.refreshOnResize) {
@@ -198,8 +191,8 @@ export default class ShbSlider {
       this.shbTouch.removeEventListener(this.shbTouch.events[eventName], handler);
     });
 
-    lodash.forEach(this._private.boundBounceHandlers, (handler, eventName) => {
-      this.bounce.removeEventListener(eventName, handler);
+    lodash.forEach(this._private.boundAnimateHandlers, (handler, eventName) => {
+      this.animate.removeEventListener(eventName, handler);
     });
 
     if (this._private.boundDebouncedRefresh) {
@@ -237,7 +230,7 @@ export default class ShbSlider {
 
   _onTouchStart() {
     this._state.isTouchActive = true;
-    if (this._state.isBounceActive) this.bounce.stop();
+    if (this._state.isAnimateActive) this.animate.stop();
   }
 
 
@@ -253,12 +246,12 @@ export default class ShbSlider {
     if (this._config.overscroll) {
       // overscrolling on the left end
       if (pushBy.x.direction > 0 && this._private.moveable.position < 0) {
-        pxToAdd *= utils.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxOverscroll);
+        pxToAdd *= ease.easeLinear(Math.abs(this._private.moveable.position), 1, -1, this._config.maxOverscroll);
       }
       // overscrolling on the right end
       else if (pushBy.x.direction < 0 && this._private.moveable.position > this._private.boundaries.end) {
         let distanceFromRight = this._private.boundaries.end - this._private.moveable.position;
-        pxToAdd *= utils.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxOverscroll);
+        pxToAdd *= ease.easeLinear(Math.abs(distanceFromRight), 1, -1, this._config.maxOverscroll);
       }
 
       newPosition = this._private.moveable.position + pxToAdd;
@@ -315,23 +308,23 @@ export default class ShbSlider {
     }
 
     if (newPosition >= 0) {
-      this.bounce.start(this._private.moveable.position, newPosition);
+      this.animate.start(this._private.moveable.position, newPosition);
     }
   }
 
 
-  _onBounceStart() {
-    this._state.isBounceActive = true;
+  _onAnimateStart() {
+    this._state.isAnimateActive = true;
   }
 
 
-  _onBouncePositionChange(event) {
+  _onAnimatePositionChange(event) {
     this._updateMoveablePosition(event.data);
   }
 
 
-  _onBounceEnd() {
-    this._state.isBounceActive = false;
+  _onAnimateEnd() {
+    this._state.isAnimateActive = false;
     this._checkForSlideChangeEnd();
     this._checkForPositionStable();
   }
@@ -341,32 +334,30 @@ export default class ShbSlider {
 
 
   _checkForBounceStart() {
-    if (this._state.isTouchActive || this._state.isBounceActive) return;
+    if (this._state.isTouchActive || this._state.isAnimateActive) return;
 
     let newPosition = this._getClosestBounceTarget();
 
     if (newPosition === this._private.moveable.position) return;
 
-    this.bounce.start(this._private.moveable.position, newPosition);
+    this.animate.start(this._private.moveable.position, newPosition);
   }
 
 
   _checkForPositionStable() {
-    if (this._state.isTouchActive || this._state.isBounceActive) return;
+    if (this._state.isTouchActive || this._state.isAnimateActive) return;
 
     this.dispatchEvent(new Event(events.positionStable), lodash.cloneDeep(this._private.moveable));
   }
 
 
   _checkForSlideChangeEnd() {
-    if (this._state.isBounceActive || this._private.previousSlideIndex < 0) return;
+    if (this._state.isAnimateActive) return;
 
     this.dispatchEvent(new Event(events.slideChangeEnd), {
       previousIndex: this._private.previousSlideIndex,
       currentIndex: this._private.currentSlideIndex
     });
-
-    this._private.previousSlideIndex = -1;
   }
 
 
@@ -399,17 +390,8 @@ export default class ShbSlider {
 
     // in case the slide changed, update the previous and current index, send out events
     if (newCurrentSlideIndex !== this._private.currentSlideIndex) {
-      let isSlideChangeStart = this._private.previousSlideIndex < 0;
-
       this._private.previousSlideIndex = this._private.currentSlideIndex;
       this._private.currentSlideIndex = newCurrentSlideIndex;
-
-      if (isSlideChangeStart) {
-        this.dispatchEvent(new Event(events.slideChangeStart), {
-          previousIndex: this._private.previousSlideIndex,
-          currentIndex: this._private.currentSlideIndex
-        });
-      }
 
       this.dispatchEvent(new Event(events.slideChange), {
         previousIndex: this._private.previousSlideIndex,
