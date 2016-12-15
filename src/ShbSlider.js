@@ -128,10 +128,8 @@ export default class ShbSlider {
   }
 
 
-  refresh(config) {
+  refresh() {
     let previousWidth = this._private.container.width;
-
-    if (config) lodash.merge(this._config, config);
 
     requestAnimationFrame(() => {
       this._calculateParams();
